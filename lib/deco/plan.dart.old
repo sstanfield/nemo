@@ -1,0 +1,228 @@
+import 'dart:math';
+
+
+var N2_As_A = const [1.2599, 1.0000, 0.8618, 0.7562, 0.6667, 0.5933, 0.5282, 0.4701, 0.4187, 0.3798, 0.3497, 0.3223, 0.2971, 0.2737, 0.2523, 0.2327];
+var N2_As_B = const [1.2599, 1.0000, 0.8618, 0.7562, 0.6667, 0.5600, 0.4947, 0.4500, 0.4187, 0.3798, 0.3497, 0.3223, 0.2850, 0.2737, 0.2523, 0.2327];
+var N2_As_C = const [1.2599, 1.0000, 0.8618, 0.7562, 0.6200, 0.5043, 0.4410, 0.4000, 0.3750, 0.3500, 0.3295, 0.3065, 0.2835, 0.2610, 0.2480, 0.2327];
+//var N2_As_C = const [3.24, 2.54, 2.25, 2.03, 1.85, 1.69, 1.59, 1.52, 1.47, 1.43, 1.40, 1.37, 1.34, 1.31, 1.29, 1.27];
+
+enum SegmentType {
+	UP,
+	DOWN,
+	LEVEL
+}
+
+class Segment {
+	SegmentType type;
+	num depth;
+	num time;
+
+	Segment(this.type, this.depth, this.time) {}
+}
+
+class Dive {
+	var _tN;
+	var _tH;
+	num fN2;
+	num fHe;
+	num gfLo;
+	num gfHi;
+	num gfSlope = 0;
+	num assentRate = 1.8;
+	//num assentRate = 0.9;
+	num descentRate = 3.0;
+	num lastDepth = 0;
+	set assentMeters(num rate) => assentRate = rate / 10.0;
+	set decentMeters(num rate) => descentRate = rate / 10.0;
+	var lastStop = 3;
+	final num Compartments = 16;
+	//final num Pw = 0;//.0567;
+	final num Pw = .0567;
+	var N2_HalfTimes = const [4.00, 8.00, 12.50, 18.50, 27.00, 38.30, 54.30, 77.00, 109.00, 146.00, 187.00, 239.00, 305.00, 390.00, 498.00, 635.00]; // 1b 5.0
+	var He_HalfTimes = const [1.51, 3.02,  4.72,  6.99, 10.21, 14.48, 20.53, 29.11,  41.20,  55.19,  70.69,  90.34, 115.29, 147.42, 188.24, 240.03]; // 1b 1.88
+	var He_As = const [1.7424, 1.3830, 1.1919, 1.0458, 0.9220, 0.8205, 0.7305, 0.6502, 0.5950, 0.5545, 0.5333, 0.5189, 0.5181, 0.5176, 0.5172, 0.5119];
+	var He_Bs = const [0.4245, 0.5747, 0.6527, 0.7223, 0.7582, 0.7957, 0.8279, 0.8553, 0.8757, 0.8903, 0.8997, 0.9073, 0.9122, 0.9171, 0.9217, 0.9267];
+	var N2_As;
+	var N2_Bs = const [0.5050, 0.6514, 0.7222, 0.7825, 0.8126, 0.8434, 0.8693, 0.8910, 0.9092, 0.9222, 0.9319, 0.9403, 0.9477, 0.9544, 0.9602, 0.9653];
+
+	List<Segment> segments = new List<Segment>();
+
+	Dive(this.gfLo, this.gfHi, this.fN2, this.fHe)
+	{
+		var Pa = 1.0;
+		var Pn = 0.79 * (Pa - Pw);
+		_tN = new List(Compartments);
+		_tH = new List(Compartments);
+		for (num i = 0; i < Compartments; i++) {
+			_tN[i] = Pn;
+			_tH[i] = 0;
+		}
+		//N2_As = N2_As_B;
+		N2_As = N2_As_C;
+	}
+
+	descend(num rate_bar, num fromDepth, num toDepth)
+	{
+		var depth = toDepth;
+		var t = ((toDepth - fromDepth) / 10.0) / rate_bar;
+		var bar = 1.0 + (depth / 10.0);
+		var brate = rate_bar;  // rate of decent in bar
+		for (num i = 0; i < Compartments; i++) {
+			var Po = _tN[i];
+			var Pio = (bar - Pw) * fN2;
+			var R = brate * fN2;
+			var k = log(2) / N2_HalfTimes[i];
+			_tN[i] = Pio + R * (t - (1/k)) - (Pio - Po - (R / k)) * exp(-k * t);
+
+			Po = _tH[i];
+			Pio = (bar - Pw) * fHe;
+			R = brate * fHe;
+			k = log(2) / He_HalfTimes[i];
+			_tH[i] = Pio + R * (t - (1/k)) - (Pio - Po - (R / k)) * exp(-k * t);
+		}
+		if (rate_bar > 0) segments.add(new Segment(SegmentType.DOWN, depth, t));
+		if (rate_bar < 0) segments.add(new Segment(SegmentType.UP, depth, t));
+	}
+	ascend(num rate_bar, num fromDepth, num toDepth)
+	{
+		descend(-rate_bar, fromDepth, toDepth);
+	}
+
+	bottom(num depth, num time)
+	{
+		var bar = 1.0 + (depth / 10.0);
+		for (num i = 0; i < Compartments; i++) {
+			var Po = _tN[i];
+			var Pio = (bar - Pw) * fN2;
+			_tN[i] = Po + (Pio - Po) * (1 - pow(2, -time / N2_HalfTimes[i]));
+
+			Po = _tH[i];
+			Pio = (bar - Pw) * fHe;
+			_tH[i] = Po + (Pio - Po) * (1 - pow(2, -time / He_HalfTimes[i]));
+		}
+		lastDepth = depth;
+		//segments.add(new Segment(SegmentType.DOWN, depth, time));
+
+/*
+		//	var depth = toDepth;
+		var t = time;//(toDepth - fromDepth) / rate;
+		var bar = 1.0 + (depth / 10.0);
+		//var brate = (rate / 10.0);  // rate of decent in bar
+		for (num i = 0; i < Compartments; i++) {
+			var Po = _tN[i];
+			var Pio = (bar - Pw) * fN2;
+			var R = 0;//brate * fN2;
+			var k = log(2) / N2_HalfTimes[i];
+			_tN[i] = Pio + R * (t - (1/k)) - (Pio - Po - (R / k)) * exp(-k * t);
+
+			Po = _tH[i];
+			Pio = (bar - Pw) * fHe;
+			R = 0;//brate * fHe;
+			k = log(2) / He_HalfTimes[i];
+			_tH[i] = Pio + R * (t - (1/k)) - (Pio - Po - (R / k)) * exp(-k * t);
+		}*/
+	}
+
+	num nextStop(num gf) // Depth (in meters) of first stop.
+	{
+		//print("ns gf: $gf");
+		var ceiling = 0;
+		for (num i = 0; i < Compartments; i++) {
+			var a = ((N2_As[i] * _tN[i]) + (He_As[i] * _tH[i])) / (_tN[i] + _tH[i]);
+			var b = ((N2_Bs[i] * _tN[i]) + (He_Bs[i] * _tH[i])) / (_tN[i] + _tH[i]);
+			var ceil = ((_tN[i] + _tH[i]) - (gf * a)) / ((gf/b) - gf + 1);
+			if (ceil > ceiling) ceiling = ceil;
+		}
+		if (ceiling < 1.0) return 0;
+		var stop = (ceiling - 1.0) * 10.0;
+		//if (ceiling < 0.0) return 0;
+		//var stop = ceiling * 10.0;
+		if (stop <= lastStop) return lastStop;
+		var done = false;
+		for (num i = lastStop+3; !done; i+=3) {
+			if (stop < i) {
+				stop = i;
+				done = true;
+			}
+		}
+		return stop;
+	}
+
+	num firstStop() // Depth (in meters) of first stop.
+	{
+		var fs = nextStop(gfLo);
+		ascend(assentRate, lastDepth, fs);
+		lastDepth = fs;
+		var nfs = nextStop(gfLo);
+		if (nfs < fs) return firstStop();
+		return fs;
+	}
+	num ceiling()
+	{
+		var ceiling = 0;
+		for (num i = 0; i < Compartments; i++) {
+			var a = ((N2_As[i] * _tN[i]) + (He_As[i] * _tH[i])) / (_tN[i] + _tH[i]);
+			var b = ((N2_Bs[i] * _tN[i]) + (He_Bs[i] * _tH[i])) / (_tN[i] + _tH[i]);
+			var ceil = ((_tN[i] + _tH[i]) - a) * b;
+			if (ceil > ceiling) ceiling = ceil;
+		}
+		return ceiling;
+	}
+
+	_calcDecoInt(num gf)
+	{
+		var fs = nextStop(gf);
+		//print("calc: $gf");
+		ascend(assentRate, lastDepth, fs);
+		lastDepth = fs;
+		var ngf = gfSlope * ((fs - 3) / 10.0) + gfHi;
+		var nfs = nextStop(gf);
+		if (nfs == fs) {
+			nfs = nextStop(ngf);
+			var i = 1;
+			double t = 0.0;
+			bool done = false;
+			while (!done) {
+				bottom(fs, .5);//1);
+				nfs = nextStop(ngf);
+				if (nfs < fs) {
+					t = i / 2.0;
+					done = true;
+				}
+				i++;
+			}
+			segments.add(new Segment(SegmentType.LEVEL, fs, t));
+		}
+		if (fs > lastStop) _calcDecoInt(ngf);
+	}
+	calcDeco()
+	{
+		var fs = firstStop();
+		gfSlope = (gfHi - gfLo) / -(fs / 10.0);
+		//var gf = gfHi;
+		//if (fs > lastStop) gf = gfSlope * ((fs - 3) / 10.0) + gfHi;
+		_calcDecoInt(gfLo);
+
+		// Collapse ascents, always want to do this.
+		for (int i = 0; i < segments.length-1; ) {
+			if (segments[i].type == SegmentType.UP && segments[i+1].type == SegmentType.UP) {
+				segments[i+1].time += segments[i].time;
+				segments.removeAt(i);
+			} else {
+				i++;
+			}
+		}
+
+		// Merge quick assents into next deco segment.
+		for (int i = 0; i < segments.length-1; ) {
+			if ((segments[i].type == SegmentType.UP && segments[i].time < .5) && segments[i+1].type == SegmentType.LEVEL) {
+				segments[i+1].time += segments[i].time;
+				segments.removeAt(i);
+			} else {
+				i++;
+			}
+		}
+	}
+
+}
+
