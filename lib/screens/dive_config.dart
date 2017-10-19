@@ -26,7 +26,7 @@ class _DiveConfigState extends State<DiveConfig> {
     for (final Segment s in dive.segments) {
       if (!s.calculated) ret = s.depth;
     }
-    return ret;
+    return dive.mbarToDepthM(ret);
   }
 
   static int _getTime(Dive dive) {
@@ -58,8 +58,8 @@ class _DiveConfigState extends State<DiveConfig> {
           _dive.gfLo = double.parse(_gfLo.text) / 100.0;
           _dive.gfHi = double.parse(_gfHi.text) / 100.0;
           _dive.clearSegments();
-          _dive.descend(_dive.descentRate, 0, depth);
-          _dive.bottom(depth, time);
+          _dive.descendM(_dive.descentRate, 0, depth);
+          _dive.bottomM(depth, time);
         },
       ),
     ]);

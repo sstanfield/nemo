@@ -90,8 +90,8 @@ class _MyHomePageState extends State<MyHomePage> {
     //_gasses = [ new Gas.bottom(.21, .0, 1.2) ];
     _gasses = [ new Gas.bottom(.18, .45, 1.4), new Gas.deco(.50, 0.0), new Gas.deco(0.99, 0.0) ];
     _dive = new Dive(.5, .8, _gasses);
-    _dive.descend(_dive.descentRate, 0, 30);
-    _dive.bottom(30, 10.0);
+    _dive.descendM(_dive.descentRate, 0, 30);
+    _dive.bottomM(30, 10.0);
   }
 
   @override

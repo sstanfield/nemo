@@ -17,13 +17,13 @@ class Gas {
 	final double fN2;
 	final double fHe;
 	final double ppo2;
-	final int minDepth;
-	final int maxDepth;
+	final int minDepth;  // in mbar
+	final int maxDepth;  // in mbar
 	final bool useAssent;
 	final bool useDecent;
 
 	Gas(this.fO2, this.fHe, this.ppo2, double minPPO2, this.useAssent, this.useDecent):
-		fN2 = 1.0 - (fO2 + fHe), minDepth = (fO2>=.18?0:(((minPPO2/fO2)-1)*10).ceil()), maxDepth = (((ppo2/fO2)-1)*10).floor();
+		fN2 = 1.0 - (fO2 + fHe), minDepth = (fO2>=.18?0:((minPPO2/fO2)*1000).ceil()), maxDepth = ((ppo2/fO2)*1000).floor();
 	Gas.deco(double fO2, double fHe): this(fO2, fHe, 1.6, .21, true, false);
 	Gas.bottom(double fO2, double fHe, double ppo2): this(fO2, fHe, ppo2, .18, true, true);
 
@@ -48,7 +48,7 @@ class Gas {
 
 class Segment {
 	final SegmentType type;
-	final int depth;
+	final int depth;  // in mbar
 	final double rawTime;
 	final int time;
 	final Gas gas;
@@ -57,6 +57,17 @@ class Segment {
 	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.calculated);
 }
 
+/*
+
+    Fresh Water = 1000kg/m³
+    EN13319 = 1020 kg/m³
+    Salt Water = 1030 kg/m³
+
+ */
+/*
+Use mm for distance (10ft = 3048mm)
+Use mbar for pressure.
+ */
 class Dive {
 	List<double> _tN;
 	List<double> _tH;
@@ -67,16 +78,18 @@ class Dive {
 	get gfLo => _gfLo;
 	get gfHi => _gfHi;*/
 	double _gfSlope; // null
-	double assentRate = 1.0;
-	//double assentRate = 0.9;
-	double descentRate = 1.8;
+	int assentRate = 1000; // mbar/min
+	int descentRate = 1800; // mbar/min
 	int _lastDepth = 0;
-	set assentMeters(num rate) => assentRate = rate / 10.0;
-	set decentMeters(num rate) => descentRate = rate / 10.0;
-	var lastStop = 3;
+	set assentMeters(num rate) => assentRate = rate * 100;
+	set decentMeters(num rate) => descentRate = rate * 100;
+	final int atmPressure = 1013;
+	int lastStop;
+	int stopSize;
 	final int compartments = 16;
-	final double atmPressure = 1.013;
-	final double partialWater = .0567;
+	//final double partialWater = 056.7;
+	final double partialWater = 062.7;
+	//final double partialWater = 049.3;
 	final List<double> halfTimesN2 = const [4.00, 8.00, 12.50, 18.50, 27.00, 38.30, 54.30, 77.00, 109.00, 146.00, 187.00, 239.00, 305.00, 390.00, 498.00, 635.00]; // 1b 5.0
 	final List<double> halfTimesHe = const [1.51, 3.02,  4.72,  6.99, 10.21, 14.48, 20.53, 29.11,  41.20,  55.19,  70.69,  90.34, 115.29, 147.42, 188.24, 240.03]; // 1b 1.88
 	final List<double> heAs = const [1.7424, 1.3830, 1.1919, 1.0458, 0.9220, 0.8205, 0.7305, 0.6502, 0.5950, 0.5545, 0.5333, 0.5189, 0.5181, 0.5176, 0.5172, 0.5119];
@@ -86,6 +99,22 @@ class Dive {
 
 	final List<Gas> gasses;
 	List<Segment> segments = new List<Segment>();
+
+	int depthMMToMbar(int depth) {
+		return (depth/10).round() + atmPressure;
+	}
+
+	int depthMToMbar(int depth) {
+		return depthMMToMbar(depth*1000);
+	}
+
+	int mbarToDepthMM(int mbar) {
+		return (mbar - atmPressure) * 10;
+	}
+
+	int mbarToDepthM(int mbar) {
+		return (mbarToDepthMM(mbar) / 1000).round();
+	}
 
 	Gas _findGas(int depth, SegmentType type) {
 		if (gasses == null) return new Gas.bottom(.21, .0, 1.2);
@@ -104,12 +133,12 @@ class Dive {
 	}
 
 	double _nextGf(int stop) {
-		if (stop < 3 || _gfSlope == null) return gfHi;
-		return (_gfSlope * (stop - 3)) + gfHi;
+		if ((stop - stopSize - atmPressure) < 0/*stop < lastStop*/ || _gfSlope == null) return gfHi;
+		return (_gfSlope * (stop - stopSize - atmPressure)) + gfHi;
 	}
 
 	void reset() {
-		double n2Partial = 0.79 * (atmPressure - partialWater);
+		double n2Partial = 0.79 * ((atmPressure - partialWater) / 1000.0);
 		for (num i = 0; i < compartments; i++) {
 			_tN[i] = n2Partial;
 			_tH[i] = 0.0;
@@ -143,31 +172,32 @@ class Dive {
 	{
 		_tN = new List<double>(compartments);
 		_tH = new List<double>(compartments);
+		lastStop = depthMMToMbar(3000);
+		stopSize = depthMMToMbar(3000) - atmPressure;
 	  reset();
 	}
 
-	void descend(double rateBar, num fromDepth, num toDepth)
+	void descend(int rateMbar, int fromDepth, int toDepth)
 	{
-		double t = ((toDepth - fromDepth) / 10.0) / rateBar;
-		//var bar = 1.0 + (fromDepth / 10.0);
-		double bar = atmPressure + (fromDepth / 10.0);
-		double brate = rateBar;  // rate of decent in bar
-		Gas gas = _findGas(rateBar>0?toDepth:fromDepth, rateBar>0?SegmentType.DOWN:SegmentType.UP);
+		double t = (toDepth - fromDepth) / rateMbar;
+		double bar = fromDepth / 1000.0;
+		double brate = rateMbar / 1000.0;  // rate of decent in bar
+		Gas gas = _findGas(rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
 		for (int i = 0; i < compartments; i++) {
 			double po = _tN[i];
-			double pio = (bar - partialWater) * gas.fN2;
+			double pio = (bar - (partialWater/1000.0)) * gas.fN2;
 			double R = brate * gas.fN2;
 			double k = log(2) / halfTimesN2[i];
 			_tN[i] = pio + R * (t - (1/k)) - (pio - po - (R / k)) * exp(-k * t);
 
 			po = _tH[i];
-			pio = (bar - partialWater) * gas.fHe;
+			pio = (bar - (partialWater/1000.0)) * gas.fHe;
 			R = brate * gas.fHe;
 			k = log(2) / halfTimesHe[i];
 			_tH[i] = pio + R * (t - (1/k)) - (pio - po - (R / k)) * exp(-k * t);
 		}
-		if (rateBar > 0) segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, false));
-		if (rateBar < 0) {
+		if (rateMbar > 0) segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, false));
+		if (rateMbar < 0) {
 		  if (segments.length > 0) {
 				Segment lastSeg = segments.removeLast();
 				if (lastSeg.type == SegmentType.UP)
@@ -178,22 +208,26 @@ class Dive {
 			segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, true));
 		}
 	}
-	void ascend(double rateBar, num fromDepth, num toDepth)
+	void ascend(int rateMbar, int fromDepth, int toDepth)
 	{
-		descend(-rateBar, fromDepth, toDepth);
+		descend(-rateMbar, fromDepth, toDepth);
+	}
+
+	void descendM(int metersMin, int fromDepthM, int toDepthM) {
+		descend(depthMToMbar(metersMin) - atmPressure, depthMToMbar(fromDepthM), depthMToMbar(toDepthM));
 	}
 
 	void _bottom(int depth, double time, Gas gas)
 	{
 	  if (time <= 0) return;
-		double bar = 1.0 + (depth / 10.0);
+		double bar = depth / 1000.0;
 		for (num i = 0; i < compartments; i++) {
 			double po = _tN[i];
-			double pio = (bar - partialWater) * gas.fN2;
+			double pio = (bar - (partialWater/1000.0)) * gas.fN2;
 			_tN[i] = po + (pio - po) * (1 - pow(2, -time / halfTimesN2[i]));
 
 			po = _tH[i];
-			pio = (bar - partialWater) * gas.fHe;
+			pio = (bar - (partialWater/1000.0)) * gas.fHe;
 			_tH[i] = po + (pio - po) * (1 - pow(2, -time / halfTimesHe[i]));
 		}
 		_lastDepth = depth;
@@ -205,8 +239,11 @@ class Dive {
 		_bottom(depth, time, gas);
 		segments.add(new Segment(SegmentType.LEVEL, depth, time, time.ceil(), gas, false));
 	}
+	void bottomM(int meters, double time) {
+		bottom(depthMToMbar(meters), time);
+	}
 
-	int nextStop(double gf) // Depth (in meters) of first stop.
+	int nextStop(double gf) // Depth (in mbar) of next stop.
 	{
 		double ceiling = 0.0;
 		for (int i = 0; i < compartments; i++) {
@@ -215,12 +252,12 @@ class Dive {
 			double ceil = ((_tN[i] + _tH[i]) - (gf * a)) / ((gf/b) - gf + 1);
 			if (ceil > ceiling) ceiling = ceil;
 		}
-		if (ceiling < 1.0) return 0;
-		double stop = (ceiling - 1.0) * 10.0;
+		int stop = (ceiling * 1000).round();
+		if (stop < atmPressure) return 0;
 		if (stop <= lastStop) return lastStop;
 		bool done = false;
 		int ret = 0;
-		for (int i = lastStop+3; !done; i+=3) {
+		for (int i = lastStop+stopSize; !done; i+=stopSize) {
 			if (stop < i) {
 				ret = i;
 				done = true;
@@ -229,13 +266,13 @@ class Dive {
 		return ret;
 	}
 
-	int firstStop(double gf) // Depth (in meters) of first stop.
+	int firstStop(double gf) // Depth (in mbar) of first stop.
 	{
 		int fs = nextStop(gf);
 		ascend(assentRate, _lastDepth, fs);
 		_lastDepth = fs;
 
-		// Comment next two line out to start gf slope at natural first stop even
+		// Comment next two lines out to start gf slope at natural first stop even
 		// if it has cleared in the ascent to it- leaving them in seems to match
 		// Shearwater closer and not Subsurface...
 		int nfs = nextStop(gf);
@@ -261,6 +298,7 @@ class Dive {
 				_bottom(fs, .1, gas);
 				t += .1;
 				nfs = nextStop(ngf);
+				//print("XXXX $fs $nfs $ngf");
 				if (nfs < fs) {
 					done = true;
 				}
@@ -280,7 +318,7 @@ class Dive {
 	{
 	  reset();
 		int fs = firstStop(gfLo);
-		_gfSlope = (gfHi - gfLo) / -fs;
+		_gfSlope = (gfHi - gfLo) / -(fs - atmPressure);
 		_calcDecoInt(_nextGf(fs));
 	}
 

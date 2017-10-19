@@ -21,12 +21,12 @@ class DivePlan extends StatelessWidget {
       if (e.type == SegmentType.DOWN) col1.add(new Text("DESC"));
       if (e.type == SegmentType.UP) col1.add(new Text("ASC"));
       if (e.type == SegmentType.LEVEL) col1.add(new Text("---"));
-      col2.add(new Text("${e.depth}"));
+      col2.add(new Text("${_dive.mbarToDepthM(e.depth)}"));
       col3.add(new Text("${e.time}"));
       runtime += e.time;
       col4.add(new Text("$runtime"));
       col5.add(new Text("${e.gas}"));
-      double ppo2 = e.gas.fO2*((e.depth/10.0)+1);
+      double ppo2 = e.gas.fO2*((e.depth/1000));
       if (ppo2 > e.gas.ppo2)
         col6.add(new Text("${ppo2.toStringAsFixed(2)}", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.red)));
       else
