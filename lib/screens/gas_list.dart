@@ -5,16 +5,16 @@ import 'gas_edit.dart';
 class GasList extends StatelessWidget {
   final AppBar _appBar;
   final BottomNavigationBar _botNavBar;
-  final List<Gas> _gasses;
+  final Dive _dive;
   final Function _delete;
   final Function _save;
 
-  GasList(this._appBar, this._botNavBar, this._gasses, void delete(Gas gas), void save(Gas original, Gas changed)): _delete = delete, _save = save;
+  GasList(this._appBar, this._botNavBar, this._dive, void delete(Gas gas), void save(Gas original, Gas changed)): _delete = delete, _save = save;
 
   @override
   Widget build(BuildContext context) {
     List<Widget> gchildren = new List<Widget>();
-    for (final g in _gasses) {
+    for (final g in _dive.gasses) {
       gchildren.add(
           new Card(
             child: new Column(

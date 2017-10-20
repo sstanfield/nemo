@@ -83,15 +83,15 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
   List<NavigationIconView> _navigationViews;
-  List<Gas> _gasses;
   Dive _dive;
 
   _MyHomePageState() {
     //_gasses = [ new Gas.bottom(.21, .0, 1.2) ];
-    _gasses = [ new Gas.bottom(.18, .45, 1.4), new Gas.deco(.50, 0.0), new Gas.deco(0.99, 0.0) ];
-    _dive = new Dive(.5, .8, _gasses);
-    _dive.descendM(_dive.descentRate, 0, 30);
-    _dive.bottomM(30, 10.0);
+    List<Gas> gasses = [ new Gas.bottom(.18, .45, 1.4), new Gas.deco(.50, 0.0), new Gas.deco(0.99, 0.0) ];
+    _dive = new Dive();
+    for (Gas g in gasses) _dive.addGas(g);
+    _dive.descend(0, 30);
+    _dive.addBottom(30, 10.0);
   }
 
   @override
@@ -139,11 +139,11 @@ class _MyHomePageState extends State<MyHomePage> {
     // build methods fast, so that you can just rebuild anything that
     // needs updating rather than having to individually change
     // instances of widgets.
-    if (_currentIndex == 2) return new GasList(appBar, botNavBar, _gasses, (Gas gas) => setState(() {
-          _gasses.remove(gas);
+    if (_currentIndex == 2) return new GasList(appBar, botNavBar, _dive, (Gas gas) => setState(() {
+          _dive.removeGas(gas);
         }), (Gas oldGas, Gas newGas) => setState(() {
-          if (oldGas != null) _gasses.remove(oldGas);
-          _gasses.add(newGas);
+          if (oldGas != null) _dive.removeGas(oldGas);
+          _dive.addGas(newGas);
           Navigator.of(context).pop();
         }),
     );

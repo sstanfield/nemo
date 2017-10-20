@@ -55,11 +55,10 @@ class _DiveConfigState extends State<DiveConfig> {
         onPressed: () {
           int depth = int.parse(_depthcontroller.text);
           double time = double.parse(_timecontroller.text);
-          _dive.gfLo = double.parse(_gfLo.text) / 100.0;
-          _dive.gfHi = double.parse(_gfHi.text) / 100.0;
+          _dive.setGradients(double.parse(_gfLo.text) / 100.0, double.parse(_gfHi.text) / 100.0);
           _dive.clearSegments();
-          _dive.descendM(_dive.descentRate, 0, depth);
-          _dive.bottomM(depth, time);
+          _dive.descend(0, depth);
+          _dive.addBottom(depth, time - _dive.segments.last.time);
         },
       ),
     ]);
