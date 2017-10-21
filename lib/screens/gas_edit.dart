@@ -18,6 +18,7 @@ class _GasEditState extends State<GasEdit> {
   final Gas _gas;
   final TextEditingController _o2;
   final TextEditingController _he;
+  bool _decoGas = false;
   var _save;
 
   _GasEditState(this._appBar, this._gas, this._save):
@@ -29,10 +30,13 @@ class _GasEditState extends State<GasEdit> {
     Column c3 = new Column(children: [
       new TextField(controller: _o2, decoration: new InputDecoration(labelText:  "O2 %:"), keyboardType: TextInputType.number),
       new TextField(controller: _he, decoration: new InputDecoration(labelText:  "He %:"), keyboardType: TextInputType.number),
+      new Row(
+        children: [new Checkbox(value: _decoGas, onChanged: (bool v) => setState(() {_decoGas = v;})), const Text('Deco Gas') ]
+      ),
       new FlatButton(
         child: const Text('Save'),
         onPressed: () {
-          Gas newGas = new Gas.bottom(int.parse(_o2.text) / 100.0, int.parse(_he.text) / 100.0, 1.4);
+          Gas newGas = !_decoGas?new Gas.bottom(int.parse(_o2.text) / 100.0, int.parse(_he.text) / 100.0, 1.4):new Gas.deco(int.parse(_o2.text) / 100.0, int.parse(_he.text) / 100.0);
           _save(_gas, newGas);
         },
       ),
