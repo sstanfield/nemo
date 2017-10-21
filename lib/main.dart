@@ -148,6 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }),
     );
     if (_currentIndex == 1) {
+      _dive.atmPressure = 1013;
       _dive.calcDeco();
       return new DivePlan(appBar, botNavBar, _dive);
     }

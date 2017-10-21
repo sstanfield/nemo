@@ -17,18 +17,21 @@ class Gas {
 	final double fN2;
 	final double fHe;
 	final double ppo2;
-	final int minDepth;  // in mbar
-	final int maxDepth;  // in mbar
+	final int _minDepth;  // in mbar MINUS atm pressure
+	final int _maxDepth;  // in mbar MINUS atm pressure
 	final bool useAssent;
 	final bool useDecent;
 
+	int get minDepth => (_minDepth/100).round();
+	int get maxDepth => (_maxDepth/100).round();
+
 	Gas(this.fO2, this.fHe, this.ppo2, double minPPO2, this.useAssent, this.useDecent):
-		fN2 = 1.0 - (fO2 + fHe), minDepth = (fO2>=.18?0:((minPPO2/fO2)*1000).ceil()), maxDepth = ((ppo2/fO2)*1000).floor();
+		fN2 = 1.0 - (fO2 + fHe), _minDepth = (fO2>=.18?0:((minPPO2/fO2)*1000).ceil() - 1000), _maxDepth = ((ppo2/fO2)*1000).floor() - 1000;
 	Gas.deco(double fO2, double fHe): this(fO2, fHe, 1.6, .21, true, false);
 	Gas.bottom(double fO2, double fHe, double ppo2): this(fO2, fHe, ppo2, .18, true, true);
 
 	bool use(int depth, SegmentType type) {
-		if (depth >= minDepth && depth <= maxDepth) {
+		if (depth >= _minDepth && depth <= _maxDepth) {
 			if (type == SegmentType.DOWN && useDecent) return true;
 			if (type == SegmentType.UP && useAssent) return true;
 			if (type == SegmentType.LEVEL) return true;
@@ -77,7 +80,7 @@ class Dive {
 	int _assentRate = 1000; // mbar/min
 	int _descentRate = 1800; // mbar/min
 	int _lastDepth = 0;
-	final int _atmPressure = 1013;
+	int _atmPressure = 1013;
 	int _lastStop;
 	int _stopSize;
 	final int _compartments = 16;
@@ -110,7 +113,7 @@ class Dive {
 		if (_gasses == null) return new Gas.bottom(.21, .0, 1.2);
 		Gas ret;
 		_gasses.forEach ((Gas g) {
-			if (g.use(depth, type) && (ret == null || g.fO2 > ret.fO2)) ret = g;
+			if (g.use(depth - _atmPressure, type) && (ret == null || g.fO2 > ret.fO2)) ret = g;
 		});
 		if (ret == null) { // Failed to find a good fit, find something...
 			_gasses.forEach ((Gas g) {
@@ -127,7 +130,7 @@ class Dive {
 		return (_gfSlope * (stop - _stopSize - _atmPressure)) + _gfHi;
 	}
 
-	void _reset() {
+	void _reset({int atmDelta: 0}) {
 		double n2Partial = 0.79 * ((_atmPressure - _partialWater) / 1000.0);
 		for (num i = 0; i < _compartments; i++) {
 			_tN[i] = n2Partial;
@@ -140,16 +143,16 @@ class Dive {
 		int tDepth = 0;
 		for (final Segment e in s) {
 			if (e.type == SegmentType.DOWN) {
-				_descend(_descentRate, tDepth, e.depth);
-				tDepth = e.depth;
+				_descend(_descentRate, tDepth, e.depth + atmDelta);
+				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.UP) {
-				_ascend(_assentRate, tDepth, e.depth);
-				tDepth = e.depth;
+				_ascend(_assentRate, tDepth, e.depth + atmDelta);
+				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.LEVEL) {
-				_bottom(e.depth, e.rawTime);
-				tDepth = e.depth;
+				_bottom(e.depth + atmDelta, e.rawTime);
+				tDepth = e.depth + atmDelta;
 			}
 		}
 	}
@@ -307,6 +310,14 @@ class Dive {
 		_segments.clear();
 	}
 
+	set atmPressure(int atmPressure) {
+		int oldAtm = _atmPressure;
+		_atmPressure = atmPressure;
+		_lastStop = _depthMMToMbar(3000);
+		_reset(atmDelta: atmPressure-oldAtm);
+	}
+	get atmPressure => _atmPressure;
+
 	void addGas(Gas gas) { _gasses.add(gas); }
 	void removeGas(Gas gas) { _gasses.remove(gas); }
 
@@ -320,7 +331,7 @@ class Dive {
 
 	void calcDeco()
 	{
-	  _reset();
+		_reset();
 		int fs = _firstStop(_gfLo);
 		_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
 		_calcDecoInt(_nextGf(fs));
