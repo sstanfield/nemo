@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Nemo',
       theme: new ThemeData(
         // This is the theme of your application.
         //
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         // reset back to zero -- the application is not restarted.
         primarySwatch: Colors.red,
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: new MyHomePage(title: 'Nemo Dive Planner'),
     );
   }
 }
