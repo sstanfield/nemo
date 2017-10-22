@@ -12,7 +12,7 @@ enum SegmentType {
 	LEVEL
 }
 
-class Gas {
+class Gas implements Comparable<Gas> {
   final double fO2;
 	final double fN2;
 	final double fHe;
@@ -46,6 +46,14 @@ class Gas {
 
 	bool operator ==(o) => o is Gas && o.fO2 == fO2 && o.fHe == fHe;
 	int get hashCode => (fO2*1000 + fHe*1000).ceil();
+
+  @override
+  int compareTo(Gas other) {
+    if (this == other) return 0;
+    if (fO2 < other.fO2) return -1;
+    if (fO2 == other.fO2 && fHe < fHe) return -1;
+    return 1;
+  }
 }
 
 
@@ -354,7 +362,7 @@ class Dive {
 	set decentMeters(num rate) => _descentRate = rateMToMbar(rate);
 
 	List<Segment> get segments => new List.unmodifiable(_segments);
-	List<Gas> get gasses => new List.unmodifiable(_gasses);
+	List<Gas> get gasses => new List.unmodifiable(_gasses..sort());
 
 /*	void printDive()
 	{
