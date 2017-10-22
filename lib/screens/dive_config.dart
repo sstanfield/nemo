@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'general_settings.dart';
+import 'dive_segment.dart';
 import '../deco/plan.dart';
 
 class DiveConfig extends StatefulWidget {
@@ -16,10 +18,6 @@ class _DiveConfigState extends State<DiveConfig> {
   final Dive _dive;
   final AppBar _appBar;
   final BottomNavigationBar _botNavBar;
-  final TextEditingController _depthcontroller;
-  final TextEditingController _timecontroller;
-  final TextEditingController _gfLo;
-  final TextEditingController _gfHi;
 
   static int _getDepth(Dive dive) {
     int ret = 30;
@@ -37,30 +35,45 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  _DiveConfigState(this._appBar, this._botNavBar, this._dive):
-    _depthcontroller = new TextEditingController(text: "${_getDepth(_dive)}"),
-    _timecontroller = new TextEditingController(text: "${_getTime(_dive)}"),
-    _gfLo = new TextEditingController(text: "${(_dive.gfLo*100).round()}"),
-    _gfHi = new TextEditingController(text: "${(_dive.gfHi*100).round()}");
+  _DiveConfigState(this._appBar, this._botNavBar, this._dive);
 
   @override
   Widget build(BuildContext context) {
-    ListView c3 = new ListView(children: [
-      new TextField(controller: _gfLo, decoration: new InputDecoration(labelText:  "gfLo:"), keyboardType: TextInputType.number),
-      new TextField(controller: _gfHi, decoration: new InputDecoration(labelText:  "gfHi:"), keyboardType: TextInputType.number),
-      new TextField(controller: _depthcontroller, decoration: new InputDecoration(labelText:  "Depth:"), keyboardType: TextInputType.number),
-      new TextField(controller: _timecontroller, decoration: new InputDecoration(labelText:  "Time:"), keyboardType: TextInputType.number),
-      new FlatButton(
-        child: const Text('Save'),
-        onPressed: () {
-          int depth = int.parse(_depthcontroller.text);
-          double time = double.parse(_timecontroller.text);
-          _dive.setGradients(double.parse(_gfLo.text) / 100.0, double.parse(_gfHi.text) / 100.0);
-          _dive.clearSegments();
-          _dive.descend(0, depth);
-          _dive.addBottom(depth, time - _dive.segments.last.time);
-        },
-      ),
+    ListView c3 = new ListView(
+        padding: const EdgeInsets.all(20.0),
+        children: [
+      new Card(child: new Column(children: [
+        new Text("Dive Settings", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+        new Row(children: [new Text("Gradient factors:  "), new Text("${(_dive.gfLo*100).round().toString()}/${(_dive.gfHi*100).round().toString()}")]),
+        new Row(children: [new Text("ATM Pressure:  "), new Text("${_dive.atmPressure}")]),
+        new ButtonBar(
+                    children: <Widget>[
+                      new FlatButton(
+                        child: const Text('Edit'),
+                        onPressed: () {
+                          Navigator.of(context).push(new MaterialPageRoute<Null>(
+                              builder: (BuildContext context) {
+                                return new GeneralSettings(appBar: _appBar, dive: _dive);
+                              })
+                          );}),
+                    ]),
+      ])),
+      new Card(child: new Column(children: [
+        new Text("Dive Segment", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+        new Row(children: [new Text("Depth:  "), new Text("${_getDepth(_dive)}")]),
+        new Row(children: [new Text("Time:  "), new Text("${_getTime(_dive)}")]),
+        new ButtonBar(
+            children: <Widget>[
+              new FlatButton(
+                  child: const Text('Edit'),
+                  onPressed: () {
+                    Navigator.of(context).push(new MaterialPageRoute<Null>(
+                        builder: (BuildContext context) {
+                          return new DiveSegment(appBar: _appBar, dive: _dive);
+                        })
+                    );}),
+            ]),
+      ])),
     ]);
     return new Scaffold(
       appBar: _appBar,
