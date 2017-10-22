@@ -148,7 +148,7 @@ class Dive {
 		_gfSlope = null;
 		List<Segment> s = _segments;
 		_segments = new List<Segment>();
-		int tDepth = 0;
+		int tDepth = _atmPressure;
 		for (final Segment e in s) {
 			if (e.type == SegmentType.DOWN) {
 				_descend(_descentRate, tDepth, e.depth + atmDelta);
@@ -334,8 +334,8 @@ class Dive {
 		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM));
 	}
 
-	void addBottom(int meters, double time) {
-		_bottom(depthMToMbar(meters), time);
+	void addBottom(int meters, int time) {
+		_bottom(depthMToMbar(meters), time.toDouble());
 	}
 
 	void calcDeco()

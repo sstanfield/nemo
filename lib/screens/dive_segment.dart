@@ -50,7 +50,7 @@ class _DiveSegmentState extends State<DiveSegment> {
             child: const Text('Save'),
             onPressed: () {
               int depth = int.parse(_depthcontroller.text);
-              double time = double.parse(_timecontroller.text);
+              int time = int.parse(_timecontroller.text);
               _dive.clearSegments();
               _dive.descend(0, depth);
               _dive.addBottom(depth, time - _dive.segments.last.time);

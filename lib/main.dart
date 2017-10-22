@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _dive = new Dive();
     for (Gas g in gasses) _dive.addGas(g);
     _dive.descend(0, 30);
-    _dive.addBottom(30, 10.0 - _dive.segments.last.time);
+    _dive.addBottom(30, 10 - _dive.segments.last.time);
   }
 
   @override
