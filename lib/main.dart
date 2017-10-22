@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _dive = new Dive();
     for (Gas g in gasses) _dive.addGas(g);
     _dive.descend(0, 30);
-    _dive.addBottom(30, 10.0);
+    _dive.addBottom(30, 10.0 - _dive.segments.last.time);
   }
 
   @override
@@ -148,7 +148,6 @@ class _MyHomePageState extends State<MyHomePage> {
         }),
     );
     if (_currentIndex == 1) {
-      _dive.atmPressure = 1013;
       _dive.calcDeco();
       return new DivePlan(appBar, botNavBar, _dive);
     }
