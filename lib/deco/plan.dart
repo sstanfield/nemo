@@ -226,7 +226,7 @@ class Dive {
 			if (ceil > ceiling) ceiling = ceil;
 		}
 		int stop = (ceiling * 1000).round();
-		if (stop < _atmPressure) return 0;
+		if (stop < _atmPressure) return _atmPressure;
 		if (stop <= _lastStop) return _lastStop;
 		bool done = false;
 		int ret = 0;
@@ -261,6 +261,7 @@ class Dive {
 			_ascend(_assentRate, _lastDepth, fs);
 			_lastDepth = fs;
 		}
+		if (fs <= _atmPressure) return;  // At surface, done...
 		double ngf = _nextGf(fs);
 		int nfs = _nextStop(ngf);
 		if (nfs == fs) {
@@ -285,7 +286,7 @@ class Dive {
 			_bottomInt(fs, t.ceil()-t, gas);
 			_segments.add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true));
 		}
-		if (nfs != 0) _calcDecoInt(ngf);
+		if (nfs > _atmPressure) _calcDecoInt(ngf);
 	}
 
 
