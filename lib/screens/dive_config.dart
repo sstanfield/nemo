@@ -29,8 +29,10 @@ class _DiveConfigState extends State<DiveConfig> {
 
   static int _getTime(Dive dive) {
     int ret = 10;
+    Segment prev;
     for (final Segment s in dive.segments) {
-      if (!s.calculated) ret = s.time;
+      if (!s.calculated) ret = s.time+(prev!=null?prev.time:0);
+      prev = s;
     }
     return ret;
   }
