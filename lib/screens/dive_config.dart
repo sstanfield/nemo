@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'general_settings.dart';
 import 'dive_segment.dart';
+import 'gas_edit.dart';
 import '../deco/plan.dart';
 
 class DiveConfig extends StatefulWidget {
@@ -14,10 +15,20 @@ class DiveConfig extends StatefulWidget {
   _DiveConfigState createState() => new _DiveConfigState(_appBar, _botNavBar, _dive);
 }
 
+typedef Widget _ExpansionItemBodyBuilder();
+class _ExpansionItem {
+  final ExpansionPanelHeaderBuilder headerBuilder;
+  final _ExpansionItemBodyBuilder bodyBuilder;
+  bool isExpanded;
+  _ExpansionItem({this.headerBuilder, this.bodyBuilder, this.isExpanded = false});
+}
+
 class _DiveConfigState extends State<DiveConfig> {
   final Dive _dive;
   final AppBar _appBar;
   final BottomNavigationBar _botNavBar;
+  List<_ExpansionItem> _epanels = new List<_ExpansionItem>();
+  var _saveGas;
 
   static int _getDepth(Dive dive) {
     int ret = 30;
@@ -37,7 +48,56 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  _DiveConfigState(this._appBar, this._botNavBar, this._dive);
+  _DiveConfigState(this._appBar, this._botNavBar, this._dive) {
+    _saveGas = (Gas oldGas, Gas newGas) => setState(() {
+      if (oldGas != null) _dive.removeGas(oldGas);
+      _dive.addGas(newGas);
+      Navigator.of(context).pop();
+    });
+    _epanels.add(new _ExpansionItem(
+      headerBuilder: (BuildContext context, bool isExpanded) => new Text(
+          "Gasses"), bodyBuilder: () => new Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: new Column(children: gasses())),));
+  }
+
+  Widget gasWidget2(Gas g, bool allowDelete) {
+    Widget label = new Row(
+        mainAxisSize: MainAxisSize.max,
+        children: <Widget>[
+          new Expanded(child: new Text("$g")),
+          new FlatButton(
+              child: const Text('Edit'),
+              onPressed: () =>
+                  Navigator.of(context).push(new MaterialPageRoute<Null>(
+                      builder: (BuildContext context) {
+                        return new GasEdit(appBar: _appBar, gas: g, save: _saveGas);
+                      }))
+          ),
+        ]
+    );
+    Widget ret;
+    if (allowDelete) ret = new Chip(
+      label: label,
+      onDeleted: () => setState(() => _dive.removeGas(g)),
+    );
+    else ret = new Chip(label: label);
+    return ret;
+  }
+
+  List<Widget> gasses() {
+    List<Widget> gchildren = new List<Widget>();
+    bool allowDelete = _dive.gasses.length > 1;
+    for (final g in _dive.gasses) {
+      gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: gasWidget2(g, allowDelete)));
+    }
+    gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: new FlatButton(child: const Text("Add"), onPressed: () => Navigator.of(context).push(new MaterialPageRoute<Null>(
+        builder: (BuildContext context) {
+          return new GasEdit(appBar: _appBar, gas: new Gas.bottom(.21, .0, 1.2), save: _saveGas);
+        })
+    ),)));
+    return gchildren;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +120,13 @@ class _DiveConfigState extends State<DiveConfig> {
                           );}),
                     ]),
       ])),
+      new ExpansionPanelList(children: _epanels.map((_ExpansionItem item) {
+        return new ExpansionPanel(
+            isExpanded: item.isExpanded,
+            headerBuilder: item.headerBuilder,
+            body: item.bodyBuilder()
+        );
+      }).toList(), expansionCallback: (int panelIndex, bool isExpanded) => setState(() => _epanels[panelIndex].isExpanded = !isExpanded)),
       new Card(child: new Column(children: [
         new Text("Dive Segment", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
         new Row(children: [new Text("Depth:  "), new Text("${_getDepth(_dive)}")]),
