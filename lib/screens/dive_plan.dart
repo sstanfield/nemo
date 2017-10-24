@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import '../deco/plan.dart';
 
 class DivePlan extends StatelessWidget {
-  final AppBar _appBar;
-  final BottomNavigationBar _botNavBar;
   final Dive _dive;
 
-  DivePlan(this._appBar, this._botNavBar, this._dive);
+  DivePlan(this._dive);
 
   @override
   Widget build(BuildContext context) {
+    _dive.calcDeco();
     List<Widget> col1 = new List<Widget>();
     List<Widget> col2 = new List<Widget>();
     List<Widget> col3 = new List<Widget>();
@@ -32,15 +31,11 @@ class DivePlan extends StatelessWidget {
       else
         col6.add(new Text("${ppo2.toStringAsFixed(2)}"));
     }
-    return new Scaffold(
-      appBar: _appBar,
-      body: new Row(children: [new Column(children: col1),
+    return new Row(children: [new Column(children: col1),
                                new Expanded(child: new Column(children: col2)),
                                new Expanded(child: new Column(children: col3)),
                                new Expanded(child: new Column(children: col4)),
                                new Expanded(child: new Column(children: col5)),
-                               new Expanded(child: new Column(children: col6))]),
-      bottomNavigationBar: _botNavBar,
-    );
+                               new Expanded(child: new Column(children: col6))]);
   }
 }

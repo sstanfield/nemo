@@ -139,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // build methods fast, so that you can just rebuild anything that
     // needs updating rather than having to individually change
     // instances of widgets.
-    if (_currentIndex == 2) return new GasList(appBar, botNavBar, _dive, (Gas gas) => setState(() {
+    /*if (_currentIndex == 2) return new GasList(appBar, botNavBar, _dive, (Gas gas) => setState(() {
           _dive.removeGas(gas);
         }), (Gas oldGas, Gas newGas) => setState(() {
           if (oldGas != null) _dive.removeGas(oldGas);
@@ -150,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_currentIndex == 1) {
       _dive.calcDeco();
       return new DivePlan(appBar, botNavBar, _dive);
-    }
-    return new DiveConfig(appBar, botNavBar, _dive);
+    }*/
+    return new DiveConfig(appBar, _dive);
   }
 }
