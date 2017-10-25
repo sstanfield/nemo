@@ -85,7 +85,7 @@ class Dive {
 	double _gfLo = .5;
 	double _gfHi = .8;
 	double _gfSlope; // null
-	int _assentRate = 1000; // mbar/min
+	int _ascentRate = 1000; // mbar/min
 	int _descentRate = 1800; // mbar/min
 	int _lastDepth = 0;
 	int _atmPressure = 1013;
@@ -115,6 +115,10 @@ class Dive {
 
 	int _mbarToDepthMM(int mbar) {
 		return (mbar - _atmPressure) * 10;
+	}
+
+	int _mbarToRateMM(int mbar) {
+		return mbar * 10;
 	}
 
 	Gas _findGas(int depth, SegmentType type) {
@@ -155,7 +159,7 @@ class Dive {
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.UP) {
-				_ascend(_assentRate, tDepth, e.depth + atmDelta);
+				_ascend(_ascentRate, tDepth, e.depth + atmDelta);
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.LEVEL) {
@@ -250,7 +254,7 @@ class Dive {
 	int _firstStop(double gf) // Depth (in mbar) of first stop.
 	{
 		int fs = _nextStop(gf);
-		_ascend(_assentRate, _lastDepth, fs);
+		_ascend(_ascentRate, _lastDepth, fs);
 		_lastDepth = fs;
 
 		// Comment next two lines out to start gf slope at natural first stop even
@@ -266,7 +270,7 @@ class Dive {
 	{
 		int fs = _nextStop(gf);
 		if (fs < _lastDepth) {
-			_ascend(_assentRate, _lastDepth, fs);
+			_ascend(_ascentRate, _lastDepth, fs);
 			_lastDepth = fs;
 		}
 		if (fs <= _atmPressure) return;  // At surface, done...
@@ -309,6 +313,11 @@ class Dive {
 
 	double get gfLo => _gfLo;
 	double get gfHi => _gfHi;
+
+	int get ascentMM => _mbarToRateMM(_ascentRate);
+	set ascentMM(int mm) => _ascentRate = _rateMMToMbar(mm);
+	int get descentMM => _mbarToRateMM(_descentRate);
+	set descentMM(int mm) => _descentRate = _rateMMToMbar(mm);
 
 	void setGradients(double gfLo, double gfHi) {
 		_gfLo = gfLo;
@@ -358,7 +367,11 @@ class Dive {
 		return (_mbarToDepthMM(mbar) / 1000).round();
 	}
 
-	set assentMeters(num rate) => _assentRate = rateMToMbar(rate);
+	int mbarToRateM(int mbar) {
+		return (_mbarToRateMM(mbar) / 1000).round();
+	}
+
+	set assentMeters(num rate) => _ascentRate = rateMToMbar(rate);
 	set decentMeters(num rate) => _descentRate = rateMToMbar(rate);
 
 	List<Segment> get segments => new List.unmodifiable(_segments);
