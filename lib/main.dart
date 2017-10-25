@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'deco/plan.dart';
 import 'screens/dive_config.dart';
-import 'screens/dive_plan.dart';
-import 'screens/gas_list.dart';
 
 class NavigationIconView {
   NavigationIconView({
@@ -81,8 +79,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _currentIndex = 0;
-  List<NavigationIconView> _navigationViews;
+  //int _currentIndex = 0;
+  //List<NavigationIconView> _navigationViews;
   Dive _dive;
 
   _MyHomePageState() {
@@ -96,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    _navigationViews = <NavigationIconView>[
+    /*_navigationViews = <NavigationIconView>[
       new NavigationIconView(
         icon: new Icon(Icons.access_alarm),
         title: new Text('Settings'),
@@ -112,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: new Text('Gasses'),
         color: Colors.teal[500],
       ),
-    ];
+    ];*/
 
     final AppBar appBar = new AppBar(
     // Here we take the value from the MyHomePage object that
@@ -120,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // our appbar title.
       title: new Text(widget.title),
     );
-    final BottomNavigationBar botNavBar = new BottomNavigationBar(
+    /*final BottomNavigationBar botNavBar = new BottomNavigationBar(
       items: _navigationViews
           .map((NavigationIconView navigationView) => navigationView.item)
           .toList(),
@@ -131,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
           _currentIndex = index;
         });
       },
-    );
+    );*/
 
     // This method is rerun every time setState is called, for instance
     // as done by the _incrementCounter method above.
