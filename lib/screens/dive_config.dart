@@ -47,16 +47,14 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  _DiveConfigState(this._appBar, this._dive) {
-    _saveGas = (Gas oldGas, Gas newGas) => setState(() {
-      if (oldGas != null) _dive.removeGas(oldGas);
-      _dive.addGas(newGas);
-      Navigator.of(context).pop();
-    });
-    _epanels.add(new _ExpansionItem(
-      headerBuilder: (BuildContext context, bool isExpanded) => new Container(child: new Text("Settings", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-        alignment:  Alignment.center,),
-      bodyBuilder: () => new Padding(
+  Widget _expansionTitle(String text) {
+    return new Container(
+      child: new Text(text, style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+      alignment:  Alignment.center,);
+  }
+
+  Widget _makeSettingsBody() {
+    return new Padding(
           padding: const EdgeInsets.all(10.0),
           child: new Column(children: [
         new Row(children: [new Text("Gradient factors:  "), new Text("${(_dive.gfLo*100).round().toString()}/${(_dive.gfHi*100).round().toString()}")]),
@@ -71,18 +69,18 @@ class _DiveConfigState extends State<DiveConfig> {
                               })
                           );},
         ),
-          ]),
-     )));
-    _epanels.add(new _ExpansionItem(
-      headerBuilder: (BuildContext context, bool isExpanded) => new Container(child: new Text("Gasses", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-        alignment:  Alignment.center,),
-      bodyBuilder: () => new Padding(
+          ])
+    );
+  }
+
+  Widget _makeGassesBody() {
+    return new Padding(
         padding: const EdgeInsets.all(10.0),
-        child: new Column(children: gasses())),));
-    _epanels.add(new _ExpansionItem(
-      headerBuilder: (BuildContext context, bool isExpanded) => new Container(child: new Text("Dive Segments", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-        alignment:  Alignment.center,),
-      bodyBuilder: () => new Column(children: [
+        child: new Column(children: _gasses()));
+  }
+
+  Widget _makeSegmentsBody() {
+    return new Column(children: [
         new Row(children: [new Text("Depth:  "), new Text("${_getDepth(_dive)}")]),
         new Row(children: [new Text("Time:  "), new Text("${_getTime(_dive)}")]),
         new IconButton(
@@ -95,10 +93,29 @@ class _DiveConfigState extends State<DiveConfig> {
                   })
               );},
           ),
-      ]),));
+      ]);
   }
 
-  Widget gasWidget(Gas g, bool allowDelete) {
+  _DiveConfigState(this._appBar, this._dive) {
+    _saveGas = (Gas oldGas, Gas newGas) => setState(() {
+      if (oldGas != null) _dive.removeGas(oldGas);
+      _dive.addGas(newGas);
+      Navigator.of(context).pop();
+    });
+    _epanels.add(new _ExpansionItem(
+      headerBuilder: (BuildContext context, bool isExpanded) => _expansionTitle("Settings"),
+      bodyBuilder: _makeSettingsBody,
+     ));
+    _epanels.add(new _ExpansionItem(
+      headerBuilder: (BuildContext context, bool isExpanded) => _expansionTitle("Gasses"),
+      bodyBuilder: _makeGassesBody
+    ));
+    _epanels.add(new _ExpansionItem(
+      headerBuilder: (BuildContext context, bool isExpanded) => _expansionTitle("Dive Segments"),
+      bodyBuilder: _makeSegmentsBody));
+  }
+
+  Widget _gasWidget(Gas g, bool allowDelete) {
     Widget label = new Row(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
@@ -124,11 +141,11 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  List<Widget> gasses() {
+  List<Widget> _gasses() {
     List<Widget> gchildren = new List<Widget>();
     bool allowDelete = _dive.gasses.length > 1;
     for (final g in _dive.gasses) {
-      gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: gasWidget(g, allowDelete)));
+      gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: _gasWidget(g, allowDelete)));
     }
     gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: new IconButton(
             icon: new Icon(Icons.add),
