@@ -174,7 +174,12 @@ class Dive {
 		double t = (toDepth - fromDepth) / rateMbar;
 		double bar = fromDepth / 1000.0;
 		double brate = rateMbar / 1000.0;  // rate of decent in bar
-		Gas gas = _findGas(rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
+		Gas gas;
+		if (rateMbar < 0 && _segments.last != null && _segments.last.type == SegmentType.UP) {
+			gas = _segments.last.gas;
+		} else {
+			gas = _findGas(rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
+		}
 		for (int i = 0; i < _compartments; i++) {
 			double po = _tN[i];
 			double pio = (bar - (_partialWater/1000.0)) * gas.fN2;
@@ -192,10 +197,11 @@ class Dive {
 		if (rateMbar < 0) {
 		  if (_segments.length > 0) {
 				Segment lastSeg = _segments.removeLast();
-				if (lastSeg.type == SegmentType.UP)
+				if (lastSeg.type == SegmentType.UP) {
 					t += lastSeg.rawTime;
-				else
+				} else {
 					_segments.add(lastSeg);
+				}
 			}
 			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, calculated));
 		}
