@@ -114,7 +114,27 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  Widget _segmentWidget(int depth, int time, bool allowDelete) {
+  void _removeSegment(int index) {
+    List<Segment> segments = new List<Segment>();
+    Segment lastSegment;
+    int i = 0;
+    for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
+      if (s.type == SegmentType.LEVEL) {
+        if (index != i)
+          segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false));
+      }
+      lastSegment = s;
+      i++;
+    }
+    _dive.clearSegments();
+    lastSegment = null;
+    for (Segment s in segments) {
+      _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+      lastSegment = s;
+    }
+  }
+
+  Widget _segmentWidget(int depth, int time, bool allowDelete, int idx) {
     Widget label = new Row(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
@@ -125,7 +145,7 @@ class _DiveConfigState extends State<DiveConfig> {
             onPressed: () {
               Navigator.of(context).push(new MaterialPageRoute<Null>(
                   builder: (BuildContext context) {
-                    return new DiveSegment(appBar: _appBar, dive: _dive);
+                    return new DiveSegment(appBar: _appBar, dive: _dive, index: idx);
                   })
               );},
           ),
@@ -134,7 +154,7 @@ class _DiveConfigState extends State<DiveConfig> {
     Widget ret;
     if (allowDelete) ret = new Chip(
       label: label,
-      //onDeleted: () => setState(() => _dive.removeGas(g)),
+      onDeleted: () => setState(() => _removeSegment(idx)),
     );
     else ret = new Chip(label: label);
     return ret;
@@ -163,25 +183,27 @@ class _DiveConfigState extends State<DiveConfig> {
     List<Widget> gchildren = new List<Widget>();
     bool allowDelete = _dive.segments.where((Segment s) => s.type == SegmentType.LEVEL && !s.calculated).length > 1;
     Segment prev;
+    int idx = 0;
     for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
       if (s.type == SegmentType.LEVEL) {
         int time = s.time;
         if (prev != null && prev.type != SegmentType.LEVEL) time += prev.time;
         gchildren.add(new Padding(padding: const EdgeInsets.all(2.0),
-            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, allowDelete)));
+            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, allowDelete, idx)));
       }
       prev = s;
+      idx++;
     }
-    /*gchildren.add(*/new Padding(padding: const EdgeInsets.all(2.0), child: new IconButton(
+    gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: new IconButton(
       icon: new Icon(Icons.add),
       tooltip: 'Add Segment',
       onPressed: () {
-        /*Navigator.of(context).push(new MaterialPageRoute<Null>(
+        Navigator.of(context).push(new MaterialPageRoute<Null>(
             builder: (BuildContext context) {
-              return new GasEdit(appBar: _appBar, gas: new Gas.bottom(.21, .0, 1.2), save: _saveGas);
+              return new DiveSegment(appBar: _appBar, dive: _dive, index: -1);
             })
-        );*/},
-    ));//);
+        );},
+    )));
     return gchildren;
   }
 

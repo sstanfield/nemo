@@ -4,16 +4,18 @@ import '../deco/plan.dart';
 class DiveSegment extends StatefulWidget {
   final AppBar appBar;
   final Dive dive;
+  final int index;
 
-  DiveSegment({Key key, this.appBar, this.dive}): super(key: key);
+  DiveSegment({Key key, this.appBar, this.dive, this.index}): super(key: key);
 
   @override
-  _DiveSegmentState createState() => new _DiveSegmentState(appBar, dive);
+  _DiveSegmentState createState() => new _DiveSegmentState(appBar, dive, index);
 }
 
 class _DiveSegmentState extends State<DiveSegment> {
   final Dive _dive;
   final AppBar _appBar;
+  final int index;
   final TextEditingController _depthcontroller;
   final TextEditingController _timecontroller;
 
@@ -35,7 +37,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     return ret;
   }
 
-  _DiveSegmentState(this._appBar, this._dive):
+  _DiveSegmentState(this._appBar, this._dive, this.index):
         _depthcontroller = new TextEditingController(text: "${_getDepth(_dive)}"),
         _timecontroller = new TextEditingController(text: "${_getTime(_dive)}");
 
@@ -51,9 +53,26 @@ class _DiveSegmentState extends State<DiveSegment> {
             onPressed: () {
               int depth = int.parse(_depthcontroller.text);
               int time = int.parse(_timecontroller.text);
+              List<Segment> segments = new List<Segment>();
+              Segment lastSegment;
+              int i = 0;
+              for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
+                if (s.type == SegmentType.LEVEL) {
+                  if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false));
+                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false));
+                }
+                lastSegment = s;
+                i++;
+              }
               _dive.clearSegments();
-              _dive.descend(0, depth);
-              _dive.addBottom(depth, time - _dive.segments.last.time);
+              lastSegment = null;
+              for (Segment s in segments) {
+                _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+                lastSegment = s;
+              }
+              if (index == -1) {
+                _dive.move(lastSegment==null?0:lastSegment.depth, depth, time);
+              }
               Navigator.of(context).pop();
             },
           ),

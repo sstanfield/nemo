@@ -155,11 +155,11 @@ class Dive {
 		int tDepth = _atmPressure;
 		for (final Segment e in s) {
 			if (e.type == SegmentType.DOWN) {
-				_descend(_descentRate, tDepth, e.depth + atmDelta);
+				_descend(_descentRate, tDepth, e.depth + atmDelta, false);
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.UP) {
-				_ascend(_ascentRate, tDepth, e.depth + atmDelta);
+				_ascend(_ascentRate, tDepth, e.depth + atmDelta, false);
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.LEVEL) {
@@ -169,7 +169,7 @@ class Dive {
 		}
 	}
 
-	void _descend(int rateMbar, int fromDepth, int toDepth)
+	void _descend(int rateMbar, int fromDepth, int toDepth, bool calculated)
 	{
 		double t = (toDepth - fromDepth) / rateMbar;
 		double bar = fromDepth / 1000.0;
@@ -188,7 +188,7 @@ class Dive {
 			k = log(2) / _halfTimesHe[i];
 			_tH[i] = pio + R * (t - (1/k)) - (pio - po - (R / k)) * exp(-k * t);
 		}
-		if (rateMbar > 0) _segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, false));
+		if (rateMbar > 0) _segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, calculated));
 		if (rateMbar < 0) {
 		  if (_segments.length > 0) {
 				Segment lastSeg = _segments.removeLast();
@@ -197,12 +197,12 @@ class Dive {
 				else
 					_segments.add(lastSeg);
 			}
-			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, true));
+			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, calculated));
 		}
 	}
-	void _ascend(int rateMbar, int fromDepth, int toDepth)
+	void _ascend(int rateMbar, int fromDepth, int toDepth, bool calculated)
 	{
-		_descend(-rateMbar, fromDepth, toDepth);
+		_descend(-rateMbar, fromDepth, toDepth, calculated);
 	}
 
 	void _bottomInt(int depth, double time, Gas gas)
@@ -254,7 +254,7 @@ class Dive {
 	int _firstStop(double gf) // Depth (in mbar) of first stop.
 	{
 		int fs = _nextStop(gf);
-		_ascend(_ascentRate, _lastDepth, fs);
+		_ascend(_ascentRate, _lastDepth, fs, true);
 		_lastDepth = fs;
 
 		// Comment next two lines out to start gf slope at natural first stop even
@@ -270,7 +270,7 @@ class Dive {
 	{
 		int fs = _nextStop(gf);
 		if (fs < _lastDepth) {
-			_ascend(_ascentRate, _lastDepth, fs);
+			_ascend(_ascentRate, _lastDepth, fs, true);
 			_lastDepth = fs;
 		}
 		if (fs <= _atmPressure) return;  // At surface, done...
@@ -340,11 +340,21 @@ class Dive {
 	void removeGas(Gas gas) { _gasses.remove(gas); }
 
 	void descend(int fromDepthM, int toDepthM) {
-		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM));
+		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
+	}
+
+	void ascend(int fromDepthM, int toDepthM) {
+		_ascend(_ascentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
 	}
 
 	void addBottom(int meters, int time) {
 		_bottom(depthMToMbar(meters), time.toDouble());
+	}
+
+	void move(int from, int to, int time) {
+		if (from < to) descend(from, to);
+		else ascend(from, to);
+		addBottom(to, time - segments.last.time);
 	}
 
 	void calcDeco()
