@@ -121,7 +121,7 @@ class _DiveConfigState extends State<DiveConfig> {
     for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
       if (s.type == SegmentType.LEVEL) {
         if (index != i)
-          segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false));
+          segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false, s.ceiling));
       }
       lastSegment = s;
       i++;
@@ -134,7 +134,7 @@ class _DiveConfigState extends State<DiveConfig> {
     }
   }
 
-  Widget _segmentWidget(int depth, int time, bool allowDelete, int idx) {
+  Widget _segmentWidget(int depth, int time, bool allowDelete, int idx, int ceiling) {
     Widget label = new Row(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
@@ -145,7 +145,7 @@ class _DiveConfigState extends State<DiveConfig> {
             onPressed: () {
               Navigator.of(context).push(new MaterialPageRoute<Null>(
                   builder: (BuildContext context) {
-                    return new DiveSegment(appBar: _appBar, dive: _dive, index: idx);
+                    return new DiveSegment(appBar: _appBar, dive: _dive, index: idx, ceiling: ceiling);
                   })
               );},
           ),
@@ -184,12 +184,14 @@ class _DiveConfigState extends State<DiveConfig> {
     bool allowDelete = _dive.segments.where((Segment s) => s.type == SegmentType.LEVEL && !s.calculated).length > 1;
     Segment prev;
     int idx = 0;
+    int ceiling = 0;
     for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
       if (s.type == SegmentType.LEVEL) {
         int time = s.time;
         if (prev != null && prev.type != SegmentType.LEVEL) time += prev.time;
         gchildren.add(new Padding(padding: const EdgeInsets.all(2.0),
-            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, allowDelete, idx)));
+            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, allowDelete, idx, ceiling)));
+        ceiling = _dive.mbarToDepthM(s.ceiling);
       }
       prev = s;
       idx++;
@@ -200,7 +202,7 @@ class _DiveConfigState extends State<DiveConfig> {
       onPressed: () {
         Navigator.of(context).push(new MaterialPageRoute<Null>(
             builder: (BuildContext context) {
-              return new DiveSegment(appBar: _appBar, dive: _dive, index: -1);
+              return new DiveSegment(appBar: _appBar, dive: _dive, index: -1, ceiling: ceiling);
             })
         );},
     )));

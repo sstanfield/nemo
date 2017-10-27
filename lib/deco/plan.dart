@@ -1,5 +1,4 @@
 import 'dart:math';
-//import 'dart:io';
 
 
 final List<double> n2AsA = const [1.2599, 1.0000, 0.8618, 0.7562, 0.6667, 0.5933, 0.5282, 0.4701, 0.4187, 0.3798, 0.3497, 0.3223, 0.2971, 0.2737, 0.2523, 0.2327];
@@ -64,8 +63,9 @@ class Segment {
 	final int time;
 	final Gas gas;
 	final bool calculated;
+	final int ceiling;
 
-	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.calculated);
+	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.calculated, this.ceiling);
 }
 
 /*
@@ -142,12 +142,16 @@ class Dive {
 		return (_gfSlope * (stop - _stopSize - _atmPressure)) + _gfHi;
 	}
 
-	void _reset({int atmDelta: 0}) {
+	void _clearTissues() {
 		double n2Partial = 0.79 * ((_atmPressure - _partialWater) / 1000.0);
 		for (num i = 0; i < _compartments; i++) {
 			_tN[i] = n2Partial;
 			_tH[i] = 0.0;
 		}
+	}
+
+	void _reset({int atmDelta: 0}) {
+	  _clearTissues();
 		_segments.removeWhere((Segment s) => s.calculated);
 		_gfSlope = null;
 		List<Segment> s = _segments;
@@ -193,7 +197,7 @@ class Dive {
 			k = log(2) / _halfTimesHe[i];
 			_tH[i] = pio + R * (t - (1/k)) - (pio - po - (R / k)) * exp(-k * t);
 		}
-		if (rateMbar > 0) _segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, calculated));
+		if (rateMbar > 0) _segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas, calculated, 0));
 		if (rateMbar < 0) {
 		  if (_segments.length > 0) {
 				Segment lastSeg = _segments.removeLast();
@@ -203,7 +207,7 @@ class Dive {
 					_segments.add(lastSeg);
 				}
 			}
-			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, calculated));
+			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, calculated, 0));
 		}
 	}
 	void _ascend(int rateMbar, int fromDepth, int toDepth, bool calculated)
@@ -231,10 +235,10 @@ class Dive {
 	{
 		Gas gas = _findGas(depth, SegmentType.LEVEL);
 		_bottomInt(depth, time, gas);
-		_segments.add(new Segment(SegmentType.LEVEL, depth, time, time.ceil(), gas, false));
+		_segments.add(new Segment(SegmentType.LEVEL, depth, time, time.ceil(), gas, false, _calcCeiling(_gfLo)));
 	}
 
-	int _nextStop(double gf) // Depth (in mbar) of next stop.
+	int _calcCeiling(double gf) // Depth (in mbar) of current ceiling.
 	{
 		double ceiling = 0.0;
 		for (int i = 0; i < _compartments; i++) {
@@ -244,7 +248,13 @@ class Dive {
 			if (ceil > ceiling) ceiling = ceil;
 		}
 		int stop = (ceiling * 1000).round();
-		if (stop < _atmPressure) return _atmPressure;
+		return (stop < _atmPressure)?_atmPressure:stop;
+	}
+
+	int _nextStop(double gf) // Depth (in mbar) of next stop.
+	{
+		int stop = _calcCeiling(gf);
+		if (stop <= _atmPressure) return _atmPressure;
 		if (stop <= _lastStop) return _lastStop;
 		bool done = false;
 		int ret = 0;
@@ -302,7 +312,7 @@ class Dive {
 				_segments.add(lastSeg);
 			}
 			_bottomInt(fs, t.ceil()-t, gas);
-			_segments.add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true));
+			_segments.add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true, 0));
 		}
 		if (nfs > _atmPressure) _calcDecoInt(ngf);
 	}
@@ -332,6 +342,7 @@ class Dive {
 
 	void clearSegments() {
 		_segments.clear();
+		_clearTissues();
 	}
 
 	set atmPressure(int atmPressure) {
@@ -392,17 +403,4 @@ class Dive {
 
 	List<Segment> get segments => new List.unmodifiable(_segments);
 	List<Gas> get gasses => new List.unmodifiable(_gasses..sort());
-
-/*	void printDive()
-	{
-		double runtime = 0.0;
-		for (final e in segments) {
-			runtime += e.time;
-			if (e.type == SegmentType.DOWN) stdout.write("| ");
-			if (e.type == SegmentType.UP) stdout.write("^ ");
-			if (e.type == SegmentType.LEVEL) stdout.write("- ");
-			print("${e.depth} : ${e.time.toStringAsFixed(2)} : ${runtime.toStringAsFixed(2)}      ${((1.0-(e.gas.fN2+e.gas.fHe))*100).round()}/${(e.gas.fHe*100).round()}");
-		}
-		//segments.forEach(f(e) => print("$e.depth : $e.time"));
-	}*/
 }

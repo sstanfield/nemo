@@ -88,8 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Gas> gasses = [ new Gas.bottom(.18, .45, 1.4), new Gas.deco(.50, 0.0), new Gas.deco(0.99, 0.0) ];
     _dive = new Dive();
     for (Gas g in gasses) _dive.addGas(g);
-    _dive.descend(0, 30);
-    _dive.addBottom(30, 10 - _dive.segments.last.time);
+    _dive.move(0, 45, 10);
   }
 
   @override

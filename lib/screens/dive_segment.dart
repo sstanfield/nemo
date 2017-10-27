@@ -5,16 +5,18 @@ class DiveSegment extends StatefulWidget {
   final AppBar appBar;
   final Dive dive;
   final int index;
+  final int ceiling;
 
-  DiveSegment({Key key, this.appBar, this.dive, this.index}): super(key: key);
+  DiveSegment({Key key, this.appBar, this.dive, this.index, this.ceiling}): super(key: key);
 
   @override
-  _DiveSegmentState createState() => new _DiveSegmentState(appBar, dive, index);
+  _DiveSegmentState createState() => new _DiveSegmentState(appBar, dive, index, ceiling);
 }
 
 class _DiveSegmentState extends State<DiveSegment> {
   final Dive _dive;
   final AppBar _appBar;
+  final int ceiling;
   final int index;
   final TextEditingController _depthcontroller;
   final TextEditingController _timecontroller;
@@ -37,7 +39,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     return ret;
   }
 
-  _DiveSegmentState(this._appBar, this._dive, this.index):
+  _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling):
         _depthcontroller = new TextEditingController(text: "${_getDepth(_dive)}"),
         _timecontroller = new TextEditingController(text: "${_getTime(_dive)}");
 
@@ -46,6 +48,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     ListView c3 = new ListView(
         padding: const EdgeInsets.all(20.0),
         children: <Widget>[
+          new Text("Ceiling: $ceiling"),
           new TextField(controller: _depthcontroller, decoration: new InputDecoration(labelText:  "Depth:"), keyboardType: TextInputType.number),
           new TextField(controller: _timecontroller, decoration: new InputDecoration(labelText:  "Time:"), keyboardType: TextInputType.number),
           new FlatButton(
@@ -58,8 +61,8 @@ class _DiveSegmentState extends State<DiveSegment> {
               int i = 0;
               for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
                 if (s.type == SegmentType.LEVEL) {
-                  if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false));
-                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false));
+                  if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false, 0));
+                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false, s.ceiling));
                 }
                 lastSegment = s;
                 i++;
