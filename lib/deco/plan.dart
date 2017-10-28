@@ -207,7 +207,7 @@ class Dive {
 					_segments.add(lastSeg);
 				}
 			}
-			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.ceil(), gas, calculated, 0));
+			_segments.add(new Segment(SegmentType.UP, toDepth, t, t.round(), gas, calculated, 0));
 		}
 	}
 	void _ascend(int rateMbar, int fromDepth, int toDepth, bool calculated)
@@ -297,19 +297,24 @@ class Dive {
 			bool done = false;
 			Gas gas = _findGas(fs, SegmentType.UP);
 			while (!done) {
-				_bottomInt(fs, .1, gas);
-				t += .1;
+				_bottomInt(fs, .3, gas);
+				t += .3;
 				nfs = _nextStop(ngf);
-				//print("XXXX $fs $nfs $ngf");
 				if (nfs < fs) {
 					done = true;
 				}
 			}
 			Segment lastSeg = _segments.removeLast();
-			if (lastSeg.type != SegmentType.LEVEL && lastSeg.rawTime < 1.0) t += lastSeg.rawTime;
-			else {
-				_bottomInt(lastSeg.depth, lastSeg.time.ceil()-lastSeg.rawTime, gas);
-				_segments.add(lastSeg);
+			if (lastSeg.type != SegmentType.LEVEL) {
+				if (lastSeg.rawTime < 1.0) {
+					t += lastSeg.rawTime;
+				} else {
+					if (lastSeg.time > lastSeg.rawTime)
+						_bottomInt(lastSeg.depth, lastSeg.time-lastSeg.rawTime, lastSeg.gas);
+					else
+						t += lastSeg.rawTime - lastSeg.time;
+					_segments.add(lastSeg);
+				}
 			}
 			_bottomInt(fs, t.ceil()-t, gas);
 			_segments.add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true, 0));
