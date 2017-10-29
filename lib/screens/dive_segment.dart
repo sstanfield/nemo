@@ -21,27 +21,29 @@ class _DiveSegmentState extends State<DiveSegment> {
   final TextEditingController _depthcontroller;
   final TextEditingController _timecontroller;
 
-  static int _getDepth(Dive dive) {
-    int ret = 30;
-    for (final Segment s in dive.segments) {
-      if (!s.calculated) ret = s.depth;
+  static int _getDepth(Dive dive, int index) {
+    int i = 0;
+    for (final s in dive.segments.where((Segment s) => !s.calculated)) {
+      if (index == i) return dive.mbarToDepthM(s.depth);
+      i++;
     }
-    return dive.mbarToDepthM(ret);
+    return 30;
   }
 
-  static int _getTime(Dive dive) {
-    int ret = 10;
+  static int _getTime(Dive dive, int index) {
     Segment prev;
-    for (final Segment s in dive.segments) {
-      if (!s.calculated) ret = s.time+(prev!=null?prev.time:0);
+    int i = 0;
+    for (final s in dive.segments.where((Segment s) => !s.calculated)) {
+      if (index == i) return s.time+(prev!=null?prev.time:0);
       prev = s;
+      i++;
     }
-    return ret;
+    return 10;
   }
 
   _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling):
-        _depthcontroller = new TextEditingController(text: "${_getDepth(_dive)}"),
-        _timecontroller = new TextEditingController(text: "${_getTime(_dive)}");
+        _depthcontroller = new TextEditingController(text: "${_getDepth(_dive, index)}"),
+        _timecontroller = new TextEditingController(text: "${_getTime(_dive, index)}");
 
   @override
   Widget build(BuildContext context) {
