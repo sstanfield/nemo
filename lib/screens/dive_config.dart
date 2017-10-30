@@ -120,8 +120,20 @@ class _DiveConfigState extends State<DiveConfig> {
     int i = 0;
     for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
       if (s.type == SegmentType.LEVEL) {
-        if (index != i)
-          segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false, s.ceiling));
+        if (index != i) {
+          int tmptime = s.time +
+              (lastSegment != null && lastSegment.type != SegmentType.LEVEL
+                  ? lastSegment.time
+                  : 0);
+          segments.add(new Segment(
+              s.type,
+              _dive.mbarToDepthM(s.depth),
+              0.0,
+              tmptime,
+              s.gas,
+              false,
+              s.ceiling));
+        }
       }
       lastSegment = s;
       i++;
@@ -129,7 +141,8 @@ class _DiveConfigState extends State<DiveConfig> {
     _dive.clearSegments();
     lastSegment = null;
     for (Segment s in segments) {
-      _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+      if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+      else _dive.addBottom(0, s.time);
       lastSegment = s;
     }
   }

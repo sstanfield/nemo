@@ -156,7 +156,9 @@ class Dive {
 		_gfSlope = null;
 		List<Segment> s = _segments;
 		_segments = new List<Segment>();
+		List<List<Segment>> prevSegments = new List<List<Segment>>();
 		int tDepth = _atmPressure;
+		Gas air = new Gas.bottom(.21, 0.0, 1.2);
 		for (final Segment e in s) {
 			if (e.type == SegmentType.DOWN) {
 				_descend(_descentRate, tDepth, e.depth + atmDelta, false);
@@ -167,8 +169,30 @@ class Dive {
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.LEVEL) {
-				_bottom(e.depth + atmDelta, e.rawTime);
-				tDepth = e.depth + atmDelta;
+				if (e.depth + atmDelta > _atmPressure) {
+					_bottom(e.depth + atmDelta, e.rawTime);
+					tDepth = e.depth + atmDelta;
+				} else {
+					// Surface interval, calc deco and save results then do next dive.
+					int fs = _firstStop(_gfLo);
+					_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
+					_calcDecoInt(_nextGf(fs));
+					_bottomInt(e.depth + atmDelta, e.rawTime, air);
+					_segments.add(new Segment(SegmentType.LEVEL, e.depth + atmDelta, e.rawTime, e.rawTime.ceil(), air, false, _atmPressure));
+					tDepth = e.depth + atmDelta;
+					prevSegments.add(_segments);
+					_segments = new List<Segment>();
+				}
+			}
+		}
+		int fs = _firstStop(_gfLo);
+		_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
+		_calcDecoInt(_nextGf(fs));
+		if (prevSegments.length > 0) {
+			prevSegments.add(_segments);
+			_segments = new List<Segment>();
+			for (List<Segment> l in prevSegments) {
+				_segments.addAll(l);
 			}
 		}
 	}
@@ -179,7 +203,7 @@ class Dive {
 		double bar = fromDepth / 1000.0;
 		double brate = rateMbar / 1000.0;  // rate of decent in bar
 		Gas gas;
-		if (rateMbar < 0 && _segments.last != null && _segments.last.type == SegmentType.UP) {
+		if (rateMbar < 0 && _segments.length > 0 && _segments.last.type == SegmentType.UP) {
 			gas = _segments.last.gas;
 		} else {
 			gas = _findGas(rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
@@ -382,9 +406,9 @@ class Dive {
 	void calcDeco()
 	{
 		_reset();
-		int fs = _firstStop(_gfLo);
-		_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
-		_calcDecoInt(_nextGf(fs));
+		//int fs = _firstStop(_gfLo);
+		//_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
+		//_calcDecoInt(_nextGf(fs));
 	}
 
 	int depthMToMbar(int depth) {

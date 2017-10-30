@@ -34,7 +34,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     Segment prev;
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.calculated)) {
-      if (index == i) return s.time+(prev!=null?prev.time:0);
+      if (index == i) return s.time+(prev!=null&&prev.type!=SegmentType.LEVEL?prev.time:0);
       prev = s;
       i++;
     }
@@ -63,8 +63,9 @@ class _DiveSegmentState extends State<DiveSegment> {
               int i = 0;
               for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
                 if (s.type == SegmentType.LEVEL) {
+                  int tmptime = s.time+(lastSegment!=null&&lastSegment.type!=SegmentType.LEVEL?lastSegment.time:0);
                   if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false, 0));
-                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, s.time+(lastSegment==null?0:lastSegment.time), s.gas, false, s.ceiling));
+                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, tmptime, s.gas, false, s.ceiling));
                 }
                 lastSegment = s;
                 i++;
@@ -72,11 +73,13 @@ class _DiveSegmentState extends State<DiveSegment> {
               _dive.clearSegments();
               lastSegment = null;
               for (Segment s in segments) {
-                _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+                if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+                else _dive.addBottom(0, s.time);
                 lastSegment = s;
               }
               if (index == -1) {
-                _dive.move(lastSegment==null?0:lastSegment.depth, depth, time);
+                if (depth > 0) _dive.move(lastSegment==null?0:lastSegment.depth, depth, time);
+                else _dive.addBottom(0, time);
               }
               Navigator.of(context).pop();
             },
