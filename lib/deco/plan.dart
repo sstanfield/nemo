@@ -20,6 +20,7 @@ class Gas implements Comparable<Gas> {
 	final int _maxDepth;  // in mbar MINUS atm pressure
 	final bool useAssent;
 	final bool useDecent;
+	static final Gas air = new Gas.bottom(.21, 0.0, 1.4);
 
 	int get minDepth => (_minDepth/100).round();
 	int get maxDepth => (_maxDepth/100).round();
@@ -62,10 +63,15 @@ class Segment {
 	final double rawTime;
 	final int time;
 	final Gas gas;
-	final bool calculated;
+	final bool isCalculated;
 	final int ceiling;
+	final bool isSurfaceInterval;
 
-	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.calculated, this.ceiling);
+	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.isCalculated, this.ceiling): this.isSurfaceInterval = false;
+	Segment.surfaceInterval(int time):
+				type = SegmentType.LEVEL, depth = 0, rawTime = time.toDouble(),
+				this.time = time, gas = Gas.air, isCalculated = false, ceiling = 0,
+				isSurfaceInterval = true;
 }
 
 /*
@@ -152,13 +158,12 @@ class Dive {
 
 	void _reset({int atmDelta: 0}) {
 	  _clearTissues();
-		_segments.removeWhere((Segment s) => s.calculated);
+		_segments.removeWhere((Segment s) => s.isCalculated);
 		_gfSlope = null;
 		List<Segment> s = _segments;
 		_segments = new List<Segment>();
 		List<List<Segment>> prevSegments = new List<List<Segment>>();
 		int tDepth = _atmPressure;
-		Gas air = new Gas.bottom(.21, 0.0, 1.2);
 		for (final Segment e in s) {
 			if (e.type == SegmentType.DOWN) {
 				_descend(_descentRate, tDepth, e.depth + atmDelta, false);
@@ -169,28 +174,32 @@ class Dive {
 				tDepth = e.depth + atmDelta;
 			}
 			if (e.type == SegmentType.LEVEL) {
-				if (e.depth + atmDelta > _atmPressure) {
-					_bottom(e.depth + atmDelta, e.rawTime);
-					tDepth = e.depth + atmDelta;
-				} else {
+				if (e.isSurfaceInterval) {
 					// Surface interval, calc deco and save results then do next dive.
 					int fs = _firstStop(_gfLo);
 					_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
 					_calcDecoInt(_nextGf(fs));
-					_bottomInt(e.depth + atmDelta, e.rawTime, air);
-					_segments.add(new Segment(SegmentType.LEVEL, e.depth + atmDelta, e.rawTime, e.rawTime.ceil(), air, false, _atmPressure));
+					_bottomInt(_atmPressure, e.rawTime, Gas.air);
+					_segments.add(new Segment.surfaceInterval(e.time));
 					tDepth = e.depth + atmDelta;
 					prevSegments.add(_segments);
 					_segments = new List<Segment>();
+				} else {
+					_bottom(e.depth + atmDelta, e.rawTime);
+					tDepth = e.depth + atmDelta;
 				}
 			}
 		}
-		int fs = _firstStop(_gfLo);
-		_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
-		_calcDecoInt(_nextGf(fs));
+		if (segments.isNotEmpty) {
+			int fs = _firstStop(_gfLo);
+			_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
+			_calcDecoInt(_nextGf(fs));
+		}
 		if (prevSegments.length > 0) {
-			prevSegments.add(_segments);
-			_segments = new List<Segment>();
+			if (segments.isNotEmpty) {
+				prevSegments.add(_segments);
+				_segments = new List<Segment>();
+			}
 			for (List<Segment> l in prevSegments) {
 				_segments.addAll(l);
 			}
@@ -241,16 +250,17 @@ class Dive {
 
 	void _bottomInt(int depth, double time, Gas gas)
 	{
-	  if (time <= 0) return;
-		double bar = depth / 1000.0;
-		for (num i = 0; i < _compartments; i++) {
-			double po = _tN[i];
-			double pio = (bar - (_partialWater/1000.0)) * gas.fN2;
-			_tN[i] = po + (pio - po) * (1 - pow(2, -time / _halfTimesN2[i]));
+	  if (time > 0) {
+			double bar = depth / 1000.0;
+			for (num i = 0; i < _compartments; i++) {
+				double po = _tN[i];
+				double pio = (bar - (_partialWater / 1000.0)) * gas.fN2;
+				_tN[i] = po + (pio - po) * (1 - pow(2, -time / _halfTimesN2[i]));
 
-			po = _tH[i];
-			pio = (bar - (_partialWater/1000.0)) * gas.fHe;
-			_tH[i] = po + (pio - po) * (1 - pow(2, -time / _halfTimesHe[i]));
+				po = _tH[i];
+				pio = (bar - (_partialWater / 1000.0)) * gas.fHe;
+				_tH[i] = po + (pio - po) * (1 - pow(2, -time / _halfTimesHe[i]));
+			}
 		}
 		_lastDepth = depth;
 	}
@@ -397,10 +407,15 @@ class Dive {
 		_bottom(depthMToMbar(meters), time.toDouble());
 	}
 
+	void addSurfaceInterval(int time) {
+		_segments.add(new Segment.surfaceInterval(time));
+	}
+
 	void move(int from, int to, int time) {
 		if (from < to) descend(from, to);
 		else ascend(from, to);
-		addBottom(to, time - segments.last.time);
+		int t = time - segments.last.time;
+		addBottom(to, t>0?t:0);
 	}
 
 	void calcDeco()

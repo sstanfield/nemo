@@ -118,21 +118,25 @@ class _DiveConfigState extends State<DiveConfig> {
     List<Segment> segments = new List<Segment>();
     Segment lastSegment;
     int i = 0;
-    for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
+    for (final s in _dive.segments.where((Segment s) => !s.isCalculated)) {
       if (s.type == SegmentType.LEVEL) {
         if (index != i) {
-          int tmptime = s.time +
-              (lastSegment != null && lastSegment.type != SegmentType.LEVEL
-                  ? lastSegment.time
-                  : 0);
-          segments.add(new Segment(
-              s.type,
-              _dive.mbarToDepthM(s.depth),
-              0.0,
-              tmptime,
-              s.gas,
-              false,
-              s.ceiling));
+          if (s.isSurfaceInterval) {
+            segments.add(new Segment.surfaceInterval(s.time));
+          } else {
+            int tmptime = s.time +
+                (lastSegment != null && lastSegment.type != SegmentType.LEVEL
+                    ? lastSegment.time
+                    : 0);
+            segments.add(new Segment(
+                s.type,
+                _dive.mbarToDepthM(s.depth),
+                0.0,
+                tmptime,
+                s.gas,
+                false,
+                s.ceiling));
+          }
         }
       }
       lastSegment = s;
@@ -141,17 +145,17 @@ class _DiveConfigState extends State<DiveConfig> {
     _dive.clearSegments();
     lastSegment = null;
     for (Segment s in segments) {
-      if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-      else _dive.addBottom(0, s.time);
+      if (s.isSurfaceInterval) _dive.addSurfaceInterval(s.time);
+      else _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
       lastSegment = s;
     }
   }
 
-  Widget _segmentWidget(int depth, int time, bool allowDelete, int idx, int ceiling) {
+  Widget _segmentWidget(int depth, int time, bool allowDelete, int idx, int ceiling, bool surfaceInterval) {
     Widget label = new Row(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
-          new Expanded(child: new Text("${depth}M, $time min")),
+          new Expanded(child: new Text("${surfaceInterval?"Surface Interval":"${depth}M"}, $time min")),
           new IconButton(
             icon: new Icon(Icons.edit),
             tooltip: 'Edit Segment',
@@ -194,17 +198,17 @@ class _DiveConfigState extends State<DiveConfig> {
 
   List<Widget> _segments() {
     List<Widget> gchildren = new List<Widget>();
-    bool allowDelete = _dive.segments.where((Segment s) => s.type == SegmentType.LEVEL && !s.calculated).length > 1;
+    bool allowDelete = _dive.segments.where((Segment s) => s.type == SegmentType.LEVEL && !s.isCalculated && !s.isSurfaceInterval).length > 1;
     Segment prev;
     int idx = 0;
     int ceiling = 0;
-    for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
+    for (final s in _dive.segments.where((Segment s) => !s.isCalculated)) {
       if (s.type == SegmentType.LEVEL) {
         int time = s.time;
         if (prev != null && prev.type != SegmentType.LEVEL) time += prev.time;
         gchildren.add(new Padding(padding: const EdgeInsets.all(2.0),
-            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, allowDelete, idx, ceiling)));
-        ceiling = _dive.mbarToDepthM(s.ceiling);
+            child: _segmentWidget(_dive.mbarToDepthM(s.depth), time, s.isSurfaceInterval?true:allowDelete, idx, ceiling, s.isSurfaceInterval)));
+        ceiling = s.isSurfaceInterval?0:_dive.mbarToDepthM(s.ceiling);
       }
       prev = s;
       idx++;

@@ -23,7 +23,7 @@ class _DiveSegmentState extends State<DiveSegment> {
 
   static int _getDepth(Dive dive, int index) {
     int i = 0;
-    for (final s in dive.segments.where((Segment s) => !s.calculated)) {
+    for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
       if (index == i) return dive.mbarToDepthM(s.depth);
       i++;
     }
@@ -33,7 +33,7 @@ class _DiveSegmentState extends State<DiveSegment> {
   static int _getTime(Dive dive, int index) {
     Segment prev;
     int i = 0;
-    for (final s in dive.segments.where((Segment s) => !s.calculated)) {
+    for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
       if (index == i) return s.time+(prev!=null&&prev.type!=SegmentType.LEVEL?prev.time:0);
       prev = s;
       i++;
@@ -61,7 +61,7 @@ class _DiveSegmentState extends State<DiveSegment> {
               List<Segment> segments = new List<Segment>();
               Segment lastSegment;
               int i = 0;
-              for (final s in _dive.segments.where((Segment s) => !s.calculated)) {
+              for (final s in _dive.segments.where((Segment s) => !s.isCalculated)) {
                 if (s.type == SegmentType.LEVEL) {
                   int tmptime = s.time+(lastSegment!=null&&lastSegment.type!=SegmentType.LEVEL?lastSegment.time:0);
                   if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false, 0));
@@ -74,12 +74,12 @@ class _DiveSegmentState extends State<DiveSegment> {
               lastSegment = null;
               for (Segment s in segments) {
                 if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-                else _dive.addBottom(0, s.time);
+                else _dive.addSurfaceInterval(s.time);
                 lastSegment = s;
               }
               if (index == -1) {
                 if (depth > 0) _dive.move(lastSegment==null?0:lastSegment.depth, depth, time);
-                else _dive.addBottom(0, time);
+                else _dive.addSurfaceInterval(time);
               }
               Navigator.of(context).pop();
             },
