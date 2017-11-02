@@ -24,7 +24,7 @@ class _DiveSegmentState extends State<DiveSegment> {
   static int _getDepth(Dive dive, int index) {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
-      if (index == i) return dive.mbarToDepthM(s.depth);
+      if (index == i) return s.isSurfaceInterval?0:dive.mbarToDepthM(s.depth);
       i++;
     }
     return 30;
