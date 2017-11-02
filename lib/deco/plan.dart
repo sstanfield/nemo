@@ -63,15 +63,21 @@ class Segment {
 	final double rawTime;
 	final int time;
 	final Gas gas;
+	final List<Gas> _gasses;
 	final bool isCalculated;
 	final int ceiling;
 	final bool isSurfaceInterval;
 
-	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.isCalculated, this.ceiling): this.isSurfaceInterval = false;
+	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.isCalculated, this.ceiling): this.isSurfaceInterval = false, this._gasses = null;
 	Segment.surfaceInterval(int time):
 				type = SegmentType.LEVEL, depth = 0, rawTime = time.toDouble(),
 				this.time = time, gas = Gas.air, isCalculated = false, ceiling = 0,
-				isSurfaceInterval = true;
+				isSurfaceInterval = true, _gasses = new List<Gas>();
+
+	List<Gas> get gasses => _gasses==null?null:new List.unmodifiable(_gasses..sort());
+	void addGas(Gas gas) { _gasses?.add(gas); }
+	void removeGas(Gas gas) { _gasses?.remove(gas); }
+	void addAllGasses(List<Gas> g) { _gasses?.addAll(g); }
 }
 
 /*
@@ -127,19 +133,19 @@ class Dive {
 		return mbar * 10;
 	}
 
-	Gas _findGas(int depth, SegmentType type) {
-		if (_gasses == null) return new Gas.bottom(.21, .0, 1.2);
+	static Gas _findGas(List<Gas> gasses, int atmPressure, int depth, SegmentType type) {
+		if (gasses == null || gasses.length == 0) return Gas.air;
 		Gas ret;
-		_gasses.forEach ((Gas g) {
-			if (g.use(depth - _atmPressure, type) && (ret == null || g.fO2 > ret.fO2)) ret = g;
+		gasses.forEach ((Gas g) {
+			if (g.use(depth - atmPressure, type) && (ret == null || g.fO2 > ret.fO2)) ret = g;
 		});
 		if (ret == null) { // Failed to find a good fit, find something...
-			_gasses.forEach ((Gas g) {
+			gasses.forEach ((Gas g) {
 				if (ret == null || g.fO2*depth < ret.fO2*depth) ret = g;
 			});
 		}
 		// Seem to have no gasses... Return good old air.
-		if (ret == null) ret = new Gas.bottom(.21, .0, 1.2);
+		if (ret == null) ret = Gas.air;
 		return ret;
 	}
 
@@ -161,7 +167,7 @@ class Dive {
 		_segments.removeWhere((Segment s) => s.isCalculated);
 		_gfSlope = null;
 		List<Segment> s = _segments;
-		_segments = new List<Segment>();
+		_segments = null;//`new List<Segment>();
 		List<List<Segment>> prevSegments = new List<List<Segment>>();
 		int tDepth = _atmPressure;
 		for (final Segment e in s) {
@@ -176,27 +182,33 @@ class Dive {
 			if (e.type == SegmentType.LEVEL) {
 				if (e.isSurfaceInterval) {
 					// Surface interval, calc deco and save results then do next dive.
-					int fs = _firstStop(_gfLo);
-					_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
-					_calcDecoInt(_nextGf(fs));
+          if (_segments != null) {
+						int fs = _firstStop(_gfLo);
+						_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
+						_calcDecoInt(_nextGf(fs));
+					}
 					_bottomInt(_atmPressure, e.rawTime, Gas.air);
-					_segments.add(new Segment.surfaceInterval(e.time));
 					tDepth = e.depth + atmDelta;
-					prevSegments.add(_segments);
+					if (_segments != null) prevSegments.add(_segments);
 					_segments = new List<Segment>();
+					_segments.add(e);
+					if (e._gasses.length > 0) {
+						_gasses.clear();
+						_gasses.addAll(e._gasses);
+					}
 				} else {
 					_bottom(e.depth + atmDelta, e.rawTime);
 					tDepth = e.depth + atmDelta;
 				}
 			}
 		}
-		if (segments.isNotEmpty) {
+		if (_segments.length > 1) {
 			int fs = _firstStop(_gfLo);
 			_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
 			_calcDecoInt(_nextGf(fs));
 		}
 		if (prevSegments.length > 0) {
-			if (segments.isNotEmpty) {
+			if (_segments.isNotEmpty) {
 				prevSegments.add(_segments);
 				_segments = new List<Segment>();
 			}
@@ -215,7 +227,7 @@ class Dive {
 		if (rateMbar < 0 && _segments.length > 0 && _segments.last.type == SegmentType.UP) {
 			gas = _segments.last.gas;
 		} else {
-			gas = _findGas(rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
+			gas = _findGas(_gasses, _atmPressure, rateMbar>0?toDepth:fromDepth, rateMbar>0?SegmentType.DOWN:SegmentType.UP);
 		}
 		for (int i = 0; i < _compartments; i++) {
 			double po = _tN[i];
@@ -267,7 +279,7 @@ class Dive {
 
 	void _bottom(int depth, double time)
 	{
-		Gas gas = _findGas(depth, SegmentType.LEVEL);
+		Gas gas = _findGas(_gasses, _atmPressure, depth, SegmentType.LEVEL);
 		_bottomInt(depth, time, gas);
 		_segments.add(new Segment(SegmentType.LEVEL, depth, time, time.ceil(), gas, false, _calcCeiling(_gfLo)));
 	}
@@ -329,7 +341,7 @@ class Dive {
 		if (nfs == fs) {
 			double t = 0.0;
 			bool done = false;
-			Gas gas = _findGas(fs, SegmentType.UP);
+			Gas gas = _findGas(_gasses, _atmPressure, fs, SegmentType.UP);
 			while (!done) {
 				_bottomInt(fs, .3, gas);
 				t += .3;
@@ -363,6 +375,7 @@ class Dive {
 		_tH = new List<double>(_compartments);
 		_lastStop = _depthMMToMbar(3000);
 		_stopSize = _rateMMToMbar(3000);
+		addSurfaceInterval(0);
 		_reset();
 	}
 
@@ -380,8 +393,10 @@ class Dive {
 	}
 
 	void clearSegments() {
+		Segment s = _segments.first;
 		_segments.clear();
 		_clearTissues();
+		_segments.add(s);
 	}
 
 	set atmPressure(int atmPressure) {
@@ -392,8 +407,8 @@ class Dive {
 	}
 	get atmPressure => _atmPressure;
 
-	void addGas(Gas gas) { _gasses.add(gas); }
-	void removeGas(Gas gas) { _gasses.remove(gas); }
+	void addGas(Gas gas) { _segments.first.addGas(gas); }
+	void removeGas(Gas gas) { _segments.first.removeGas(gas); }
 
 	void descend(int fromDepthM, int toDepthM) {
 		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
@@ -421,9 +436,6 @@ class Dive {
 	void calcDeco()
 	{
 		_reset();
-		//int fs = _firstStop(_gfLo);
-		//_gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
-		//_calcDecoInt(_nextGf(fs));
 	}
 
 	int depthMToMbar(int depth) {
@@ -445,6 +457,6 @@ class Dive {
 	set assentMeters(num rate) => _ascentRate = rateMToMbar(rate);
 	set decentMeters(num rate) => _descentRate = rateMToMbar(rate);
 
-	List<Segment> get segments => new List.unmodifiable(_segments);
-	List<Gas> get gasses => new List.unmodifiable(_gasses..sort());
+	List<Segment> get segments => new List.unmodifiable(_segments.getRange(1, _segments.length));
+	List<Gas> get gasses => new List.unmodifiable(_segments.first._gasses..sort());
 }
