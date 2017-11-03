@@ -167,7 +167,7 @@ class Dive {
 		_segments.removeWhere((Segment s) => s.isCalculated);
 		_gfSlope = null;
 		List<Segment> s = _segments;
-		_segments = null;//`new List<Segment>();
+		_segments = null;
 		List<List<Segment>> prevSegments = new List<List<Segment>>();
 		int tDepth = _atmPressure;
 		for (final Segment e in s) {
@@ -188,7 +188,7 @@ class Dive {
 						_calcDecoInt(_nextGf(fs));
 					}
 					_bottomInt(_atmPressure, e.rawTime, Gas.air);
-					tDepth = e.depth + atmDelta;
+					tDepth = _atmPressure;
 					if (_segments != null) prevSegments.add(_segments);
 					_segments = new List<Segment>();
 					_segments.add(e);
