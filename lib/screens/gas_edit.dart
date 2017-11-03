@@ -5,11 +5,12 @@ class GasEdit extends StatefulWidget {
   final AppBar appBar;
   final Gas gas;
   final Function _save;
+  final Segment segment;
 
-  GasEdit({Key key, this.appBar, this.gas, void save(Gas original, Gas changed)}) : _save = save, super(key: key);
+  GasEdit({Key key, this.appBar, this.gas, this.segment, void save(Segment segment, Gas original, Gas changed)}) : _save = save, super(key: key);
 
   @override
-  _GasEditState createState() => new _GasEditState(appBar, gas, _save);
+  _GasEditState createState() => new _GasEditState(appBar, gas, _save, segment);
 }
 
 class _GasEditState extends State<GasEdit> {
@@ -19,9 +20,10 @@ class _GasEditState extends State<GasEdit> {
   final TextEditingController _o2;
   final TextEditingController _he;
   bool _decoGas = false;
+  final Segment _segment;
   var _save;
 
-  _GasEditState(this._appBar, this._gas, this._save):
+  _GasEditState(this._appBar, this._gas, this._save, this._segment):
         _o2 = new TextEditingController(text: "${(_gas.fO2*100).round()}"),
         _he = new TextEditingController(text: "${(_gas.fHe*100).round()}");
 
@@ -37,7 +39,7 @@ class _GasEditState extends State<GasEdit> {
         child: const Text('Save'),
         onPressed: () {
           Gas newGas = !_decoGas?new Gas.bottom(int.parse(_o2.text) / 100.0, int.parse(_he.text) / 100.0, 1.4):new Gas.deco(int.parse(_o2.text) / 100.0, int.parse(_he.text) / 100.0);
-          _save(_gas, newGas);
+          _save(_segment, _gas, newGas);
         },
       ),
     ]);

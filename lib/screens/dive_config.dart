@@ -70,9 +70,9 @@ class _DiveConfigState extends State<DiveConfig> {
   }
 
   _DiveConfigState(this._appBar, this._dive) {
-    _saveGas = (Gas oldGas, Gas newGas) => setState(() {
-      if (oldGas != null) _dive.removeGas(oldGas);
-      _dive.addGas(newGas);
+    _saveGas = (Segment segment, Gas oldGas, Gas newGas) => setState(() {
+      if (oldGas != null) segment.removeGas(oldGas);
+      segment.addGas(newGas);
       Navigator.of(context).pop();
     });
     _epanels.add(new _ExpansionItem(
@@ -88,7 +88,7 @@ class _DiveConfigState extends State<DiveConfig> {
       bodyBuilder: _makeSegmentsBody));
   }
 
-  Widget _gasWidget(Gas g, bool allowDelete) {
+  Widget _gasWidget(Segment segment, Gas g, bool allowDelete) {
     Widget label = new Row(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
@@ -99,7 +99,7 @@ class _DiveConfigState extends State<DiveConfig> {
             onPressed: () {
               Navigator.of(context).push(new MaterialPageRoute<Null>(
                   builder: (BuildContext context) {
-                    return new GasEdit(appBar: _appBar, gas: g, save: _saveGas);
+                    return new GasEdit(appBar: _appBar, gas: g, segment: segment, save: _saveGas);
                   })
               );},
           ),
@@ -108,7 +108,7 @@ class _DiveConfigState extends State<DiveConfig> {
     Widget ret;
     if (allowDelete) ret = new Chip(
       label: label,
-      onDeleted: () => setState(() => _dive.removeGas(g)),
+      onDeleted: () => setState(() => segment.removeGas(g)),
     );
     else ret = new Chip(label: label);
     return ret;
@@ -122,7 +122,9 @@ class _DiveConfigState extends State<DiveConfig> {
       if (s.type == SegmentType.LEVEL) {
         if (index != i) {
           if (s.isSurfaceInterval) {
-            segments.add(new Segment.surfaceInterval(s.time));
+            Segment ts = new Segment.surfaceInterval(s.time);
+            ts.addAllGasses(s.gasses);
+            segments.add(ts);
           } else {
             int tmptime = s.time +
                 (lastSegment != null && lastSegment.type != SegmentType.LEVEL
@@ -145,7 +147,7 @@ class _DiveConfigState extends State<DiveConfig> {
     _dive.clearSegments();
     lastSegment = null;
     for (Segment s in segments) {
-      if (s.isSurfaceInterval) _dive.addSurfaceInterval(s.time);
+      if (s.isSurfaceInterval) _dive.addSurfaceInterval(s.time).addAllGasses(_dive.dives.first.gasses);
       else _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
       lastSegment = s;
     }
@@ -179,20 +181,34 @@ class _DiveConfigState extends State<DiveConfig> {
 
   List<Widget> _gasses() {
     List<Widget> gchildren = new List<Widget>();
-    bool allowDelete = _dive.gasses.length > 1;
-    for (final g in _dive.gasses) {
-      gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: _gasWidget(g, allowDelete)));
-    }
-    gchildren.add(new Padding(padding: const EdgeInsets.all(2.0), child: new IconButton(
+    List<Segment> dives = _dive.dives;
+    int idx = 1;
+    for (Segment segment in dives) {
+      if (idx > 1) gchildren.add(new Divider());
+      gchildren.add(new Padding(padding: const EdgeInsets.all(2.0),
+          child: new Text("Dive $idx")));
+      bool allowDelete = segment.gasses.length > 1;
+      for (final g in segment.gasses) {
+        gchildren.add(new Padding(padding: const EdgeInsets.all(2.0),
+            child: _gasWidget(segment, g, allowDelete)));
+      }
+      gchildren.add(
+          new Padding(padding: const EdgeInsets.all(2.0), child: new IconButton(
             icon: new Icon(Icons.add),
             tooltip: 'Add Gas',
             onPressed: () {
               Navigator.of(context).push(new MaterialPageRoute<Null>(
                   builder: (BuildContext context) {
-                    return new GasEdit(appBar: _appBar, gas: new Gas.bottom(.21, .0, 1.2), save: _saveGas);
+                    return new GasEdit(appBar: _appBar,
+                        gas: new Gas.bottom(.21, .0, 1.2),
+                        segment: segment,
+                        save: _saveGas);
                   })
-              );},
+              );
+            },
           )));
+      idx++;
+    }
     return gchildren;
   }
 

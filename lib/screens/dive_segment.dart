@@ -64,8 +64,14 @@ class _DiveSegmentState extends State<DiveSegment> {
               for (final s in _dive.segments.where((Segment s) => !s.isCalculated)) {
                 if (s.type == SegmentType.LEVEL) {
                   int tmptime = s.time+(lastSegment!=null&&lastSegment.type!=SegmentType.LEVEL?lastSegment.time:0);
-                  if (index == i) segments.add(new Segment(s.type, depth, 0.0, time, s.gas, false, 0));
-                  else segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, tmptime, s.gas, false, s.ceiling));
+                  if (index == i) {
+                    segments.add(s.isSurfaceInterval?(new Segment.surfaceInterval(time)..addAllGasses(s.gasses)):
+                      new Segment(s.type, depth, 0.0, time, s.gas, false, 0));
+                  } else {
+                    segments.add(s.isSurfaceInterval?(new Segment.surfaceInterval(s.time)..addAllGasses(s.gasses)):
+                      new Segment(s.type, _dive.mbarToDepthM(s.depth),
+                        0.0, tmptime, s.gas, false, s.ceiling));
+                  }
                 }
                 lastSegment = s;
                 i++;
@@ -74,12 +80,12 @@ class _DiveSegmentState extends State<DiveSegment> {
               lastSegment = null;
               for (Segment s in segments) {
                 if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-                else _dive.addSurfaceInterval(s.time);
+                else _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
                 lastSegment = s;
               }
               if (index == -1) {
                 if (depth > 0) _dive.move(lastSegment==null?0:lastSegment.depth, depth, time);
-                else _dive.addSurfaceInterval(time);
+                else _dive.addSurfaceInterval(time).addAllGasses(_dive.dives.first.gasses);
               }
               Navigator.of(context).pop();
             },

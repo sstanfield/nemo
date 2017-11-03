@@ -407,8 +407,8 @@ class Dive {
 	}
 	get atmPressure => _atmPressure;
 
-	void addGas(Gas gas) { _segments.first.addGas(gas); }
-	void removeGas(Gas gas) { _segments.first.removeGas(gas); }
+	//void addGas(Gas gas) { _segments.first.addGas(gas); }
+	//void removeGas(Gas gas) { _segments.first.removeGas(gas); }
 
 	void descend(int fromDepthM, int toDepthM) {
 		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
@@ -422,8 +422,10 @@ class Dive {
 		_bottom(depthMToMbar(meters), time.toDouble());
 	}
 
-	void addSurfaceInterval(int time) {
-		_segments.add(new Segment.surfaceInterval(time));
+	Segment addSurfaceInterval(int time) {
+		Segment s = new Segment.surfaceInterval(time);
+		_segments.add(s);
+		return s;
 	}
 
 	void move(int from, int to, int time) {
@@ -458,5 +460,6 @@ class Dive {
 	set decentMeters(num rate) => _descentRate = rateMToMbar(rate);
 
 	List<Segment> get segments => new List.unmodifiable(_segments.getRange(1, _segments.length));
-	List<Gas> get gasses => new List.unmodifiable(_segments.first._gasses..sort());
+	List<Segment> get dives => new List.unmodifiable(_segments.where((Segment s) => s.isSurfaceInterval));
+	//List<Gas> get gasses => new List.unmodifiable(_segments.first._gasses..sort());
 }
