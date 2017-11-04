@@ -379,18 +379,15 @@ class Dive {
 		_reset();
 	}
 
-	double get gfLo => _gfLo;
-	double get gfHi => _gfHi;
+	int get gfLo => (_gfLo*100).round();
+	int get gfHi => (_gfHi*100).round();
+	set gfLo(int gf) => _gfLo = gf/100.0;
+	set gfHi(int gf) => _gfHi = gf/100.0;
 
 	int get ascentMM => _mbarToRateMM(_ascentRate);
 	set ascentMM(int mm) => _ascentRate = _rateMMToMbar(mm);
 	int get descentMM => _mbarToRateMM(_descentRate);
 	set descentMM(int mm) => _descentRate = _rateMMToMbar(mm);
-
-	void setGradients(double gfLo, double gfHi) {
-		_gfLo = gfLo;
-		_gfHi = gfHi;
-	}
 
 	void clearSegments() {
 		Segment s = _segments.first;

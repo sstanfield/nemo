@@ -13,55 +13,83 @@ class GeneralSettings extends StatefulWidget {
 
 class _GeneralSettingsState extends State<GeneralSettings> {
   final AppBar _appBar;
-  //final BottomNavigationBar _botNavBar;
   final Dive _dive;
-  final TextEditingController _gfLo;
-  final TextEditingController _gfHi;
-  final TextEditingController _atmPressure;
-  final TextEditingController _descent;
-  final TextEditingController _ascent;
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
 
-  _GeneralSettingsState(this._appBar, this._dive):
-        _gfLo = new TextEditingController(text: "${(_dive.gfLo*100).round()}"),
-        _gfHi = new TextEditingController(text: "${(_dive.gfHi*100).round()}"),
-        _atmPressure = new TextEditingController(text: "${_dive.atmPressure}"),
-        _ascent = new TextEditingController(text: "${(_dive.ascentMM/1000).round()}"),
-        _descent = new TextEditingController(text: "${(_dive.descentMM/1000).round()}");
+  _GeneralSettingsState(this._appBar, this._dive);
+
+  void showInSnackBar(String value) {
+    _scaffoldKey.currentState.showSnackBar(new SnackBar(
+        content: new Text(value)
+    ));
+  }
+
+  void _handleSubmitted() {
+    final FormState form = _formKey.currentState;
+    if (!form.validate()) {
+      //_autovalidate = true;  // Start validating on every change.
+      showInSnackBar('Please fix the errors in red before submitting.');
+    } else {
+      form.save();
+      Navigator.of(context).pop();
+    }
+  }
+
+  String _validateGf(String gf) {
+    int igf = -1;
+    try { igf = int.parse(gf); } catch (ignored) {}
+    if (igf < 0 || igf > 100) return "Enter gradiant factor 0-100";
+    return null;
+  }
+
+  String _validateAtm(String atm) {
+    int iatm = -1;
+    try { iatm = int.parse(atm); } catch (ignored) {}
+    if (iatm < 500 || iatm > 3000) return "Enter surface pressure in mbar (500-3000)";
+    return null;
+  }
+
+  String _validateRate(String rate) {
+    int irate = -1;
+    try { irate = int.parse(rate); } catch (ignored) {}
+    if (irate < 1 || irate > 300) return "Enter M/min (1-300)";
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     ListView c3 = new ListView(children: [
-      new TextField(controller: _gfLo, decoration: new InputDecoration(labelText:  "gfLo:"), keyboardType: TextInputType.number),
-      new TextField(controller: _gfHi, decoration: new InputDecoration(labelText:  "gfHi:"), keyboardType: TextInputType.number),
-      new TextField(controller: _atmPressure, decoration: new InputDecoration(labelText:  "ATM Pressure:"), keyboardType: TextInputType.number),
-      new TextField(controller: _descent, decoration: new InputDecoration(labelText:  "Descent (M/min):"), keyboardType: TextInputType.number),
-      new TextField(controller: _ascent, decoration: new InputDecoration(labelText:  "Ascent (M/min):"), keyboardType: TextInputType.number),
+      new TextFormField(initialValue: "${_dive.gfLo}",
+          onSaved: (String val) => _dive.gfLo = int.parse(val),
+          validator: _validateGf,
+          decoration: new InputDecoration(labelText:  "gfLo:"), keyboardType: TextInputType.number),
+      new TextFormField(initialValue: "${_dive.gfHi}",
+          onSaved: (String val) => _dive.gfHi = int.parse(val),
+          validator: _validateGf,
+          decoration: new InputDecoration(labelText:  "gfHi:"), keyboardType: TextInputType.number),
+      new TextFormField(initialValue: "${_dive.atmPressure}",
+          onSaved: (String val) => _dive.atmPressure = int.parse(val),
+          validator: _validateAtm,
+          decoration: new InputDecoration(labelText:  "ATM Pressure:"), keyboardType: TextInputType.number),
+      new TextFormField(initialValue: "${(_dive.descentMM/1000).round()}",
+          onSaved: (String val) => _dive.descentMM = int.parse(val)*1000,
+          validator: _validateRate,
+          decoration: new InputDecoration(labelText:  "Descent (M/min):"), keyboardType: TextInputType.number),
+      new TextFormField(initialValue: "${(_dive.ascentMM/1000).round()}",
+          onSaved: (String val) => _dive.ascentMM = int.parse(val)*1000,
+          validator: _validateRate,
+          decoration: new InputDecoration(labelText:  "Ascent (M/min):"), keyboardType: TextInputType.number),
       new FlatButton(
         child: const Text('Save'),
-        onPressed: () {
-          double lo = .5;
-          double hi = .8;
-          int atm = 1013;
-          int descent = 18;
-          int ascent = 10;
-          try { lo = (int.parse(_gfLo.text)/100.0); } catch (ignored) {}
-          try { hi = (int.parse(_gfHi.text)/100.0); } catch (ignored) {}
-          try { atm = int.parse(_atmPressure.text); } catch (ignored) {}
-          try { descent = int.parse(_descent.text); } catch (ignored) {}
-          try { ascent = int.parse(_ascent.text); } catch (ignored) {}
-          _dive.setGradients(lo, hi);
-          _dive.atmPressure = atm;
-          _dive.descentMM = descent * 1000;
-          _dive.ascentMM = ascent * 1000;
-          Navigator.of(context).pop();
-        },
+        onPressed: _handleSubmitted,
       ),
     ]);
     return new Scaffold(
+      key: _scaffoldKey,
       appBar: _appBar,
-      body: c3,
+      body: new Form(key: _formKey, child: c3),
       //bottomNavigationBar: _botNavBar,
-      //floatingActionButton: _floatingActionButton,
     );
   }
 }

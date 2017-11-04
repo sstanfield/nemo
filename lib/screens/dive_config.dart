@@ -39,7 +39,7 @@ class _DiveConfigState extends State<DiveConfig> {
     return new Padding(
           padding: const EdgeInsets.all(10.0),
           child: new Column(children: [
-        new Row(children: [new Text("Gradient factors:  "), new Text("${(_dive.gfLo*100).round().toString()}/${(_dive.gfHi*100).round().toString()}")]),
+        new Row(children: [new Text("Gradient factors:  "), new Text("${_dive.gfLo.toString()}/${_dive.gfHi.toString()}")]),
         new Row(children: [new Text("ATM Pressure:  "), new Text("${_dive.atmPressure}")]),
         new Row(children: [new Text("Descent:  "), new Text("${(_dive.descentMM / 1000).round()} M/min")]),
         new Row(children: [new Text("Assent:  "), new Text("${(_dive.ascentMM / 1000).round()} M/min")]),
