@@ -7,7 +7,14 @@ class GasEdit extends StatefulWidget {
   final Function _save;
   final Segment segment;
 
-  GasEdit({Key key, this.appBar, this.gas, this.segment, void save(Segment segment, Gas original, Gas changed)}) : _save = save, super(key: key);
+  GasEdit(
+      {Key key,
+      this.appBar,
+      this.gas,
+      this.segment,
+      void save(Segment segment, Gas original, Gas changed)})
+      : _save = save,
+        super(key: key);
 
   @override
   _GasEditState createState() => new _GasEditState(appBar, gas, _save, segment);
@@ -26,9 +33,8 @@ class _GasEditState extends State<GasEdit> {
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
 
   void showInSnackBar(String value) {
-    _scaffoldKey.currentState.showSnackBar(new SnackBar(
-        content: new Text(value)
-    ));
+    _scaffoldKey.currentState
+        .showSnackBar(new SnackBar(content: new Text(value)));
   }
 
   void _handleSubmitted() {
@@ -38,37 +44,52 @@ class _GasEditState extends State<GasEdit> {
       showInSnackBar('Please fix the errors in red before submitting.');
     } else {
       form.save();
-      Gas newGas = !_decoGas?new Gas.bottom(_pO2 / 100.0, _pHe / 100.0, 1.4):new Gas.deco(_pO2 / 100.0, _pHe / 100.0);
+      Gas newGas = !_decoGas
+          ? new Gas.bottom(_pO2 / 100.0, _pHe / 100.0, 1.4)
+          : new Gas.deco(_pO2 / 100.0, _pHe / 100.0);
       _save(_segment, _gas, newGas);
     }
   }
 
   String _validateGas(String gas) {
     int igas = -1;
-    if (gas.length == 0) igas = 0;
-    else try { igas = int.parse(gas); } catch (ignored) {}
+    if (gas.length == 0)
+      igas = 0;
+    else
+      try {
+        igas = int.parse(gas);
+      } catch (ignored) {}
     if (igas < 0 || igas > 100) return "Enter gas percent 0-100";
     return null;
   }
 
-  _GasEditState(this._appBar, this._gas, this._save, this._segment):
-        _pO2 = (_gas.fO2*100).round(),
-        _pHe = (_gas.fHe*100).round();
+  _GasEditState(this._appBar, this._gas, this._save, this._segment)
+      : _pO2 = (_gas.fO2 * 100).round(),
+        _pHe = (_gas.fHe * 100).round();
 
   @override
   Widget build(BuildContext context) {
     Column c3 = new Column(children: [
-      new TextFormField(initialValue: "$_pO2",
-          onSaved: (String val) => _pO2 = val.length==0?0:int.parse(val),
+      new TextFormField(
+          initialValue: "$_pO2",
+          onSaved: (String val) => _pO2 = val.length == 0 ? 0 : int.parse(val),
           validator: _validateGas,
-          decoration: new InputDecoration(labelText:  "O2 %:"), keyboardType: TextInputType.number),
-      new TextFormField(initialValue: "$_pHe",
-          onSaved: (String val) => _pHe = val.length==0?0:int.parse(val),
+          decoration: new InputDecoration(labelText: "O2 %:"),
+          keyboardType: TextInputType.number),
+      new TextFormField(
+          initialValue: "$_pHe",
+          onSaved: (String val) => _pHe = val.length == 0 ? 0 : int.parse(val),
           validator: _validateGas,
-          decoration: new InputDecoration(labelText:  "He %:"), keyboardType: TextInputType.number),
-      new Row(
-        children: [new Checkbox(value: _decoGas, onChanged: (bool v) => setState(() {_decoGas = v;})), const Text('Deco Gas') ]
-      ),
+          decoration: new InputDecoration(labelText: "He %:"),
+          keyboardType: TextInputType.number),
+      new Row(children: [
+        new Checkbox(
+            value: _decoGas,
+            onChanged: (bool v) => setState(() {
+                  _decoGas = v;
+                })),
+        const Text('Deco Gas')
+      ]),
       new FlatButton(
         child: const Text('Save'),
         onPressed: _handleSubmitted,

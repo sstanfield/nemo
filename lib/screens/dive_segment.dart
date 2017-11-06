@@ -7,10 +7,12 @@ class DiveSegment extends StatefulWidget {
   final int index;
   final int ceiling;
 
-  DiveSegment({Key key, this.appBar, this.dive, this.index, this.ceiling}): super(key: key);
+  DiveSegment({Key key, this.appBar, this.dive, this.index, this.ceiling})
+      : super(key: key);
 
   @override
-  _DiveSegmentState createState() => new _DiveSegmentState(appBar, dive, index, ceiling);
+  _DiveSegmentState createState() =>
+      new _DiveSegmentState(appBar, dive, index, ceiling);
 }
 
 class _DiveSegmentState extends State<DiveSegment> {
@@ -24,9 +26,8 @@ class _DiveSegmentState extends State<DiveSegment> {
   int _time;
 
   void showInSnackBar(String value) {
-    _scaffoldKey.currentState.showSnackBar(new SnackBar(
-        content: new Text(value)
-    ));
+    _scaffoldKey.currentState
+        .showSnackBar(new SnackBar(content: new Text(value)));
   }
 
   void _handleSubmitted() {
@@ -41,14 +42,19 @@ class _DiveSegmentState extends State<DiveSegment> {
       int i = 0;
       for (final s in _dive.segments.where((Segment s) => !s.isCalculated)) {
         if (s.type == SegmentType.LEVEL) {
-          int tmptime = s.time+(lastSegment!=null&&lastSegment.type!=SegmentType.LEVEL?lastSegment.time:0);
+          int tmptime = s.time +
+              (lastSegment != null && lastSegment.type != SegmentType.LEVEL
+                  ? lastSegment.time
+                  : 0);
           if (index == i) {
-            segments.add(s.isSurfaceInterval?(new Segment.surfaceInterval(_time)..addAllGasses(s.gasses)):
-            new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0));
+            segments.add(s.isSurfaceInterval
+                ? (new Segment.surfaceInterval(_time)..addAllGasses(s.gasses))
+                : new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0));
           } else {
-            segments.add(s.isSurfaceInterval?(new Segment.surfaceInterval(s.time)..addAllGasses(s.gasses)):
-            new Segment(s.type, _dive.mbarToDepthM(s.depth),
-                0.0, tmptime, s.gas, false, s.ceiling));
+            segments.add(s.isSurfaceInterval
+                ? (new Segment.surfaceInterval(s.time)..addAllGasses(s.gasses))
+                : new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, tmptime,
+                    s.gas, false, s.ceiling));
           }
         }
         lastSegment = s;
@@ -57,13 +63,21 @@ class _DiveSegmentState extends State<DiveSegment> {
       _dive.clearSegments();
       lastSegment = null;
       for (Segment s in segments) {
-        if (s.depth > 0) _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-        else _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
+        if (s.depth > 0)
+          _dive.move(
+              lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+        else
+          _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
         lastSegment = s;
       }
       if (index == -1) {
-        if (_depth > 0) _dive.move(lastSegment==null?0:lastSegment.depth, _depth, _time);
-        else _dive.addSurfaceInterval(_time).addAllGasses(_dive.dives.first.gasses);
+        if (_depth > 0)
+          _dive.move(
+              lastSegment == null ? 0 : lastSegment.depth, _depth, _time);
+        else
+          _dive
+              .addSurfaceInterval(_time)
+              .addAllGasses(_dive.dives.first.gasses);
       }
       Navigator.of(context).pop();
     }
@@ -71,16 +85,24 @@ class _DiveSegmentState extends State<DiveSegment> {
 
   String _validateDepth(String depth) {
     int idepth = -1;
-    if (depth.length == 0) idepth = 0;
-    else try { idepth = int.parse(depth); } catch (ignored) {}
+    if (depth.length == 0)
+      idepth = 0;
+    else
+      try {
+        idepth = int.parse(depth);
+      } catch (ignored) {}
     if (idepth < 0 || idepth > 1000) return "Enter depth 0-1000";
     return null;
   }
 
   String _validateTime(String time) {
     int itime = -1;
-    if (time.length == 0) itime = 0;
-    else try { itime = int.parse(time); } catch (ignored) {}
+    if (time.length == 0)
+      itime = 0;
+    else
+      try {
+        itime = int.parse(time);
+      } catch (ignored) {}
     if (itime < 0 || itime > 1000) return "Enter time 0-1000";
     return null;
   }
@@ -88,7 +110,8 @@ class _DiveSegmentState extends State<DiveSegment> {
   static int _getDepth(Dive dive, int index) {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
-      if (index == i) return s.isSurfaceInterval?0:dive.mbarToDepthM(s.depth);
+      if (index == i)
+        return s.isSurfaceInterval ? 0 : dive.mbarToDepthM(s.depth);
       i++;
     }
     return 30;
@@ -98,7 +121,9 @@ class _DiveSegmentState extends State<DiveSegment> {
     Segment prev;
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
-      if (index == i) return s.time+(prev!=null&&prev.type!=SegmentType.LEVEL?prev.time:0);
+      if (index == i)
+        return s.time +
+            (prev != null && prev.type != SegmentType.LEVEL ? prev.time : 0);
       prev = s;
       i++;
     }
@@ -109,23 +134,27 @@ class _DiveSegmentState extends State<DiveSegment> {
 
   @override
   Widget build(BuildContext context) {
-    ListView c3 = new ListView(
-        padding: const EdgeInsets.all(20.0),
-        children: <Widget>[
-          new Text("Ceiling: $ceiling"),
-          new TextFormField(initialValue: "${_getDepth(_dive, index)}",
-              onSaved: (String val) => _depth = val.length==0?0:int.parse(val),
-              validator: _validateDepth,
-              decoration: new InputDecoration(labelText:  "Depth:"), keyboardType: TextInputType.number),
-          new TextFormField(initialValue: "${_getTime(_dive, index)}",
-              onSaved: (String val) => _time = val.length==0?0:int.parse(val),
-              validator: _validateTime,
-              decoration: new InputDecoration(labelText:  "Time:"), keyboardType: TextInputType.number),
-          new FlatButton(
-            child: const Text('Save'),
-            onPressed: _handleSubmitted,
-          ),
-        ]);
+    ListView c3 =
+        new ListView(padding: const EdgeInsets.all(20.0), children: <Widget>[
+      new Text("Ceiling: $ceiling"),
+      new TextFormField(
+          initialValue: "${_getDepth(_dive, index)}",
+          onSaved: (String val) =>
+              _depth = val.length == 0 ? 0 : int.parse(val),
+          validator: _validateDepth,
+          decoration: new InputDecoration(labelText: "Depth:"),
+          keyboardType: TextInputType.number),
+      new TextFormField(
+          initialValue: "${_getTime(_dive, index)}",
+          onSaved: (String val) => _time = val.length == 0 ? 0 : int.parse(val),
+          validator: _validateTime,
+          decoration: new InputDecoration(labelText: "Time:"),
+          keyboardType: TextInputType.number),
+      new FlatButton(
+        child: const Text('Save'),
+        onPressed: _handleSubmitted,
+      ),
+    ]);
     return new Scaffold(
       key: _scaffoldKey,
       appBar: _appBar,

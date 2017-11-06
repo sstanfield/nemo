@@ -7,15 +7,14 @@ import 'package:path_provider/path_provider.dart';
 
 class NavigationIconView {
   NavigationIconView({
-  Widget icon,
-  Widget title,
-  Color color,
-  }) : _icon = icon,
+    Widget icon,
+    Widget title,
+    Color color,
+  })
+      : _icon = icon,
         _color = color,
         item = new BottomNavigationBarItem(
-          icon: icon,
-          title: title,
-          backgroundColor: color);
+            icon: icon, title: title, backgroundColor: color);
 
   final Widget _icon;
   final Color _color;
@@ -124,8 +123,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     });
   }
 
-  _MyHomePageState() {
-  }
+  _MyHomePageState() {}
 
   @override
   Widget build(BuildContext context) {
@@ -148,9 +146,9 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     ];*/
 
     final AppBar appBar = new AppBar(
-    // Here we take the value from the MyHomePage object that
-    // was created by the App.build method, and use it to set
-    // our appbar title.
+      // Here we take the value from the MyHomePage object that
+      // was created by the App.build method, and use it to set
+      // our appbar title.
       title: new Text(widget.title),
     );
     /*final BottomNavigationBar botNavBar = new BottomNavigationBar(
