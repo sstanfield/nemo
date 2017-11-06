@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'deco/plan.dart';
 import 'screens/dive_config.dart';
+import 'package:path_provider/path_provider.dart';
 
 class NavigationIconView {
   NavigationIconView({
@@ -78,17 +81,50 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => new _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   //int _currentIndex = 0;
   //List<NavigationIconView> _navigationViews;
-  Dive _dive;
+  Dive _dive = new Dive();
+
+  Future<File> _getLocalFile() async {
+    // get the path to the document directory.
+    String dir = (await getApplicationDocumentsDirectory()).path;
+    return new File('$dir/default_dive.json');
+  }
+
+  Future<String> _readState() async {
+    try {
+      File file = await _getLocalFile();
+      // read the variable as a string from the file.
+      String contents = await file.readAsString();
+      return contents;
+    } on FileSystemException {
+      return "";
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      var json = _dive.toJson();
+      _getLocalFile().then((File f) => f.writeAsString(json));
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _readState().then((String value) {
+      setState(() {
+        if (value.length > 0) {
+          _dive.loadJson(value);
+        }
+      });
+    });
+  }
 
   _MyHomePageState() {
-    //_gasses = [ new Gas.bottom(.21, .0, 1.2) ];
-    List<Gas> gasses = [ new Gas.bottom(.18, .45, 1.4), new Gas.deco(.50, 0.0), new Gas.deco(0.99, 0.0) ];
-    _dive = new Dive();
-    for (Gas g in gasses) _dive.dives.first.addGas(g);
-    _dive.move(0, 45, 10);
   }
 
   @override

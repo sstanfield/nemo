@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:convert';
 
 
 final List<double> n2AsA = const [1.2599, 1.0000, 0.8618, 0.7562, 0.6667, 0.5933, 0.5282, 0.4701, 0.4187, 0.3798, 0.3497, 0.3223, 0.2971, 0.2737, 0.2523, 0.2327];
@@ -15,25 +16,48 @@ class Gas implements Comparable<Gas> {
   final double fO2;
 	final double fN2;
 	final double fHe;
+	final double minPPO2;
 	final double ppo2;
 	final int _minDepth;  // in mbar MINUS atm pressure
 	final int _maxDepth;  // in mbar MINUS atm pressure
-	final bool useAssent;
-	final bool useDecent;
+	final bool useAscent;
+	final bool useDescent;
 	static final Gas air = new Gas.bottom(.21, 0.0, 1.4);
 
 	int get minDepth => (_minDepth/100).round();
 	int get maxDepth => (_maxDepth/100).round();
 
-	Gas(this.fO2, this.fHe, this.ppo2, double minPPO2, this.useAssent, this.useDecent):
+	Gas(this.fO2, this.fHe, this.ppo2, this.minPPO2, this.useAscent, this.useDescent):
 		fN2 = 1.0 - (fO2 + fHe), _minDepth = (fO2>=.18?0:((minPPO2/fO2)*1000).ceil() - 1000), _maxDepth = ((ppo2/fO2)*1000).floor() - 1000;
 	Gas.deco(double fO2, double fHe): this(fO2, fHe, 1.6, .21, true, false);
 	Gas.bottom(double fO2, double fHe, double ppo2): this(fO2, fHe, ppo2, .18, true, true);
 
+	factory Gas.fromJson(String json) {
+		Map<String, Object> m = JSON.decode(json);
+		double fO2 = m["fO2"];
+		double fHe = m["fHe"];
+		double minPPO2 = m["minPPO2"];
+		double ppo2 = m["ppo2"];
+		bool useAscent = m["useAscent"];
+		bool useDescent = m["useDescent"];
+		return new Gas(fO2, fHe, ppo2, minPPO2, useAscent, useDescent);
+	}
+
+	String toJson() {
+		var m = new Map<String, Object>();
+		m["fO2"] = fO2;
+		m["fHe"] = fHe;
+		m["minPPO2"] = minPPO2;
+		m["ppo2"] = ppo2;
+		m["useAscent"] = useAscent;
+		m["useDescent"] = useDescent;
+		return JSON.encode(m);
+	}
+
 	bool use(int depth, SegmentType type) {
 		if (depth >= _minDepth && depth <= _maxDepth) {
-			if (type == SegmentType.DOWN && useDecent) return true;
-			if (type == SegmentType.UP && useAssent) return true;
+			if (type == SegmentType.DOWN && useDescent) return true;
+			if (type == SegmentType.UP && useAscent) return true;
 			if (type == SegmentType.LEVEL) return true;
 		}
 		return false;
@@ -69,10 +93,54 @@ class Segment {
 	final bool isSurfaceInterval;
 
 	Segment(this.type, this.depth, this.rawTime, this.time, this.gas, this.isCalculated, this.ceiling): this.isSurfaceInterval = false, this._gasses = null;
+	Segment.raw(this.type, this.depth, this.rawTime, this.time, this.gas, this.isCalculated, this.ceiling, this.isSurfaceInterval, this._gasses);
 	Segment.surfaceInterval(int time):
 				type = SegmentType.LEVEL, depth = 0, rawTime = time.toDouble(),
 				this.time = time, gas = Gas.air, isCalculated = false, ceiling = 0,
 				isSurfaceInterval = true, _gasses = new List<Gas>();
+
+	static SegmentType segmentFromString(String str) {
+		for (SegmentType e in SegmentType.values) {
+			if (e.toString() == str) {
+				return e;
+			}
+		}
+		return null;
+	}
+
+	factory Segment.fromJson(String json) {
+		Map<String, Object> map = JSON.decode(json);
+		SegmentType type = segmentFromString(map["type"]);
+		int depth = map["depth"];
+		double rawTime = map["rawTime"];
+		int time = map["time"];
+		Gas gas = new Gas.fromJson(map["gas"]);
+		List<Gas> _gasses;
+		if (map.containsKey("_gasses")) {
+			_gasses = new List<Gas>();
+			for (String str in map["_gasses"]) {
+				_gasses.add(new Gas.fromJson(str));
+			}
+		}
+		bool isCalculated = map["isCalculated"];
+		int ceiling = map["ceiling"];
+		bool isSurfaceInterval = map["isSurfaceInterval"];
+		return new Segment.raw(type, depth, rawTime, time, gas, isCalculated, ceiling, isSurfaceInterval, _gasses);
+	}
+
+	String toJson() {
+		var m = new Map<String, Object>();
+		m["type"] = type.toString();
+		m["depth"] = depth;
+		m["rawTime"] = rawTime;
+		m["time"] = time;
+		m["gas"] = gas;
+		if (_gasses != null) m["_gasses"] = _gasses;
+		m["isCalculated"] = isCalculated;
+		m["ceiling"] = ceiling;
+		m["isSurfaceInterval"] = isSurfaceInterval;
+		return JSON.encode(m);
+	}
 
 	List<Gas> get gasses => _gasses==null?null:new List.unmodifiable(_gasses..sort());
 	void addGas(Gas gas) { _gasses?.add(gas); }
@@ -117,6 +185,59 @@ class Dive {
 	final List<Gas> _gasses = new List<Gas>();
 	List<Segment> _segments = new List<Segment>();
 
+	Dive.fromJson(String json) {
+		_tN = new List<double>(_compartments);
+		_tH = new List<double>(_compartments);
+		Map<String, Object> map = JSON.decode(json);
+		_lastStop = map["_lastStop"];
+		_stopSize = map["_stopSize"];
+		_gfLo = map["_gfLo"];
+		_gfHi = map["_gfHi"];
+		_ascentRate = map["_ascentRate"];
+		_descentRate = map["_descentRate"];
+		_lastDepth = map["_lastDepth"];
+		_atmPressure = map["_atmPressure"];
+		if (map.containsKey("_segments")) {
+			for (String str in map["_segments"]) {
+				_segments.add(new Segment.fromJson(str));
+			}
+		}
+		_reset();
+	}
+
+	void loadJson(String json) {
+		Map<String, Object> map = JSON.decode(json);
+		_lastStop = map["_lastStop"];
+		_stopSize = map["_stopSize"];
+		_gfLo = map["_gfLo"];
+		_gfHi = map["_gfHi"];
+		_ascentRate = map["_ascentRate"];
+		_descentRate = map["_descentRate"];
+		_lastDepth = map["_lastDepth"];
+		_atmPressure = map["_atmPressure"];
+		_segments.clear();
+		if (map.containsKey("_segments")) {
+			for (String str in map["_segments"]) {
+				_segments.add(new Segment.fromJson(str));
+			}
+		}
+		_reset();
+	}
+
+	String toJson() {
+		var m = new Map<String, Object>();
+		m["_gfLo"] = _gfLo;
+		m["_gfHi"] = _gfHi;
+		m["_ascentRate"] = _ascentRate;
+		m["_descentRate"] = _descentRate;
+		m["_lastDepth"] = _lastDepth;
+		m["_atmPressure"] = _atmPressure;
+		m["_lastStop"] = _lastStop;
+		m["_stopSize"] = _stopSize;
+		m["_segments"] = _segments;
+		return JSON.encode(m);
+	}
+
 	int _rateMMToMbar(int rate) {
 		return (rate/10).round();
 	}
@@ -150,7 +271,7 @@ class Dive {
 	}
 
 	double _nextGf(int stop) {
-		if ((stop - _stopSize - _atmPressure) < 0/*stop < lastStop*/ || _gfSlope == null) return _gfHi;
+		if ((stop - _stopSize - _atmPressure) < 0 || _gfSlope == null) return _gfHi;
 		return (_gfSlope * (stop - _stopSize - _atmPressure)) + _gfHi;
 	}
 
@@ -404,9 +525,6 @@ class Dive {
 	}
 	get atmPressure => _atmPressure;
 
-	//void addGas(Gas gas) { _segments.first.addGas(gas); }
-	//void removeGas(Gas gas) { _segments.first.removeGas(gas); }
-
 	void descend(int fromDepthM, int toDepthM) {
 		_descend(_descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
 	}
@@ -458,5 +576,4 @@ class Dive {
 
 	List<Segment> get segments => new List.unmodifiable(_segments.getRange(1, _segments.length));
 	List<Segment> get dives => new List.unmodifiable(_segments.where((Segment s) => s.isSurfaceInterval));
-	//List<Gas> get gasses => new List.unmodifiable(_segments.first._gasses..sort());
 }
