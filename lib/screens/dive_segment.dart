@@ -53,7 +53,7 @@ class _DiveSegmentState extends State<DiveSegment> {
           } else {
             segments.add(s.isSurfaceInterval
                 ? (new Segment.surfaceInterval(s.time)..addAllGasses(s.gasses))
-                : new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0, tmptime,
+                : new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
                     s.gas, false, s.ceiling));
           }
         }
@@ -111,7 +111,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
       if (index == i)
-        return s.isSurfaceInterval ? 0 : dive.mbarToDepthM(s.depth);
+        return s.isSurfaceInterval ? 0 : dive.mbarToDepth(s.depth);
       i++;
     }
     return 30;

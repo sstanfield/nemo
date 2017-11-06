@@ -54,11 +54,11 @@ class _DiveConfigState extends State<DiveConfig> {
           ]),
           new Row(children: [
             new Text("Descent:  "),
-            new Text("${(_dive.descentMM / 1000).round()} M/min")
+            new Text("${_dive.descentRate} ${_dive.metric?"M":"ft"}/min")
           ]),
           new Row(children: [
-            new Text("Assent:  "),
-            new Text("${(_dive.ascentMM / 1000).round()} M/min")
+            new Text("Ascent:  "),
+            new Text("${_dive.ascentRate} ${_dive.metric?"M":"ft"}/min")
           ]),
           new IconButton(
             icon: new Icon(Icons.edit),
@@ -148,7 +148,7 @@ class _DiveConfigState extends State<DiveConfig> {
                 (lastSegment != null && lastSegment.type != SegmentType.LEVEL
                     ? lastSegment.time
                     : 0);
-            segments.add(new Segment(s.type, _dive.mbarToDepthM(s.depth), 0.0,
+            segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0,
                 tmptime, s.gas, false, s.ceiling));
           }
         }
@@ -251,13 +251,13 @@ class _DiveConfigState extends State<DiveConfig> {
         gchildren.add(new Padding(
             padding: const EdgeInsets.all(2.0),
             child: _segmentWidget(
-                _dive.mbarToDepthM(s.depth),
+                _dive.mbarToDepth(s.depth),
                 time,
                 s.isSurfaceInterval ? true : allowDelete,
                 idx,
                 ceiling,
                 s.isSurfaceInterval)));
-        ceiling = s.isSurfaceInterval ? 0 : _dive.mbarToDepthM(s.ceiling);
+        ceiling = s.isSurfaceInterval ? 0 : _dive.mbarToDepth(s.ceiling);
       }
       prev = s;
       idx++;

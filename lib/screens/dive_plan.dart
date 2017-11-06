@@ -39,7 +39,7 @@ class DivePlan extends StatelessWidget {
         if (e.type == SegmentType.DOWN) col1.add(new Text("DESC"));
         if (e.type == SegmentType.UP) col1.add(new Text("ASC"));
         if (e.type == SegmentType.LEVEL) col1.add(new Text("---"));
-        col2.add(new Text("${_dive.mbarToDepthM(e.depth)}"));
+        col2.add(new Text("${_dive.mbarToDepth(e.depth)}"));
         col3.add(new Text("${e.time}"));
         runtime += e.time;
         col4.add(new Text("$runtime"));

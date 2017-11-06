@@ -86,16 +86,16 @@ class _GeneralSettingsState extends State<GeneralSettings> {
           decoration: new InputDecoration(labelText: "ATM Pressure:"),
           keyboardType: TextInputType.number),
       new TextFormField(
-          initialValue: "${(_dive.descentMM/1000).round()}",
-          onSaved: (String val) => _dive.descentMM = int.parse(val) * 1000,
+          initialValue: "${_dive.descentRate}",
+          onSaved: (String val) => _dive.descentRate = int.parse(val),
           validator: _validateRate,
-          decoration: new InputDecoration(labelText: "Descent (M/min):"),
+          decoration: new InputDecoration(labelText: "Descent (${_dive.metric?"M":"ft"}/min):"),
           keyboardType: TextInputType.number),
       new TextFormField(
-          initialValue: "${(_dive.ascentMM/1000).round()}",
-          onSaved: (String val) => _dive.ascentMM = int.parse(val) * 1000,
+          initialValue: "${_dive.ascentRate}",
+          onSaved: (String val) => _dive.ascentRate = int.parse(val),
           validator: _validateRate,
-          decoration: new InputDecoration(labelText: "Ascent (M/min):"),
+          decoration: new InputDecoration(labelText: "Ascent (${_dive.metric?"M":"ft"}/min):"),
           keyboardType: TextInputType.number),
       new FlatButton(
         child: const Text('Save'),

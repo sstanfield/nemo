@@ -240,6 +240,7 @@ class Dive {
   int _atmPressure = 1013;
   int _lastStop;
   int _stopSize;
+  bool _metric = true;
   final int _compartments = 16;
   //final double _partialWater = 056.7;
   final double _partialWater = 062.7;
@@ -351,6 +352,7 @@ class Dive {
     _descentRate = map["_descentRate"];
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
+    metric = map["_metric"];
     if (map.containsKey("_segments")) {
       for (String str in map["_segments"]) {
         _segments.add(new Segment.fromJson(str));
@@ -369,6 +371,7 @@ class Dive {
     _descentRate = map["_descentRate"];
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
+    metric = map["_metric"];
     _segments.clear();
     if (map.containsKey("_segments")) {
       for (String str in map["_segments"]) {
@@ -388,6 +391,7 @@ class Dive {
     m["_atmPressure"] = _atmPressure;
     m["_lastStop"] = _lastStop;
     m["_stopSize"] = _stopSize;
+    m["_metric"] = _metric;
     m["_segments"] = _segments;
     return JSON.encode(m);
   }
@@ -662,6 +666,21 @@ class Dive {
     _reset();
   }
 
+  void resetAllData() {
+    _gfLo = .5;
+    _gfHi = .8;
+    _ascentRate = 1000; // mbar/min
+    _descentRate = 1800; // mbar/min
+    _lastDepth = 0;
+    _atmPressure = 1013;
+    _lastStop = _depthMMToMbar(_metric?3000:3048);
+    _stopSize = _rateMMToMbar(_metric?3000:3048);
+    _gasses.clear();
+    _segments.clear();
+    addSurfaceInterval(0);
+    _reset();
+  }
+
   int get gfLo => (_gfLo * 100).round();
   int get gfHi => (_gfHi * 100).round();
   set gfLo(int gf) => _gfLo = gf / 100.0;
@@ -671,6 +690,15 @@ class Dive {
   set ascentMM(int mm) => _ascentRate = _rateMMToMbar(mm);
   int get descentMM => _mbarToRateMM(_descentRate);
   set descentMM(int mm) => _descentRate = _rateMMToMbar(mm);
+
+  bool get metric => _metric;
+  set metric(bool metric) {
+    if (metric == _metric) return;
+    _metric = metric;
+    _lastStop = _depthMMToMbar(_metric?3000:3048);
+    _stopSize = _rateMMToMbar(_metric?3000:3048);
+    _reset();
+  }
 
   void clearSegments() {
     Segment s = _segments.first;
@@ -682,24 +710,24 @@ class Dive {
   set atmPressure(int atmPressure) {
     int oldAtm = _atmPressure;
     _atmPressure = atmPressure;
-    _lastStop = _depthMMToMbar(3000);
+    _lastStop = _depthMMToMbar(_metric?3000:3048);
     _reset(atmDelta: atmPressure - oldAtm);
   }
 
   get atmPressure => _atmPressure;
 
-  void descend(int fromDepthM, int toDepthM) {
+  void descend(int fromDepth, int toDepth) {
     _descend(
-        _descentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
+        _descentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false);
   }
 
-  void ascend(int fromDepthM, int toDepthM) {
+  void ascend(int fromDepth, int toDepth) {
     _ascend(
-        _ascentRate, depthMToMbar(fromDepthM), depthMToMbar(toDepthM), false);
+        _ascentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false);
   }
 
-  void addBottom(int meters, int time) {
-    _bottom(depthMToMbar(meters), time.toDouble());
+  void addBottom(int depth, int time) {
+    _bottom(depthToMbar(depth), time.toDouble());
   }
 
   Segment addSurfaceInterval(int time) {
@@ -721,24 +749,26 @@ class Dive {
     _reset();
   }
 
-  int depthMToMbar(int depth) {
-    return _depthMMToMbar(depth * 1000);
+  int depthToMbar(int depth) {
+    return _depthMMToMbar(_metric?depth*1000:(depth*304.8).round());
   }
 
-  int rateMToMbar(int depth) {
-    return _rateMMToMbar(depth * 1000);
+  int rateToMbar(int depth) {
+    return _rateMMToMbar(_metric?depth*1000:(depth*304.8).round());
   }
 
-  int mbarToDepthM(int mbar) {
-    return (_mbarToDepthMM(mbar) / 1000).round();
+  int mbarToDepth(int mbar) {
+    return (_mbarToDepthMM(mbar) / (_metric?1000:304.8)).round();
   }
 
-  int mbarToRateM(int mbar) {
-    return (_mbarToRateMM(mbar) / 1000).round();
+  int mbarToRate(int mbar) {
+    return (_mbarToRateMM(mbar) / (_metric?1000:304.8)).round();
   }
 
-  set assentMeters(num rate) => _ascentRate = rateMToMbar(rate);
-  set decentMeters(num rate) => _descentRate = rateMToMbar(rate);
+  int get ascentRate => mbarToRate(_ascentRate);
+  int get descentRate => mbarToRate(_descentRate);
+  set ascentRate(int rate) => _ascentRate = rateToMbar(rate);
+  set descentRate(int rate) => _descentRate = rateToMbar(rate);
 
   List<Segment> get segments =>
       new List.unmodifiable(_segments.getRange(1, _segments.length));
