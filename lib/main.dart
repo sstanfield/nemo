@@ -15,9 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
       title: 'Nemo',
-      theme: new ThemeData(
+      theme: new ThemeData.light(), /*new ThemeData(
         primarySwatch: Colors.red,
-      ),
+      ),*/
       home: new MyHomePage(title: 'Nemo Dive Planner'),
     );
   }

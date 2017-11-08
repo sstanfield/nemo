@@ -137,6 +137,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     ListView c3 =
         new ListView(padding: const EdgeInsets.all(20.0), children: <Widget>[
       new Text("Ceiling: $ceiling"),
+      new Text("NOTE: Add a depth of 0 to add a surface interval and start a new dive."),
       new TextFormField(
           initialValue: "${_getDepth(_dive, index)}",
           onSaved: (String val) =>
