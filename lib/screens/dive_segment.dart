@@ -4,19 +4,21 @@ import '../deco/plan.dart';
 class DiveSegment extends StatefulWidget {
   final AppBar appBar;
   final Dive dive;
+  final Plan plan;
   final int index;
   final int ceiling;
 
-  DiveSegment({Key key, this.appBar, this.dive, this.index, this.ceiling})
+  DiveSegment({Key key, this.appBar, this.plan, this.dive, this.index, this.ceiling})
       : super(key: key);
 
   @override
   _DiveSegmentState createState() =>
-      new _DiveSegmentState(appBar, dive, index, ceiling);
+      new _DiveSegmentState(appBar, plan, dive, index, ceiling);
 }
 
 class _DiveSegmentState extends State<DiveSegment> {
   final Dive _dive;
+  final Plan _plan;
   final AppBar _appBar;
   final int ceiling;
   final int index;
@@ -47,13 +49,9 @@ class _DiveSegmentState extends State<DiveSegment> {
                   ? lastSegment.time
                   : 0);
           if (index == i) {
-            segments.add(s.isSurfaceInterval
-                ? (new Segment.surfaceInterval(_time)..addAllGasses(s.gasses))
-                : new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0));
+            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0));
           } else {
-            segments.add(s.isSurfaceInterval
-                ? (new Segment.surfaceInterval(s.time)..addAllGasses(s.gasses))
-                : new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
+            segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
                     s.gas, false, s.ceiling));
           }
         }
@@ -66,18 +64,20 @@ class _DiveSegmentState extends State<DiveSegment> {
         if (s.depth > 0)
           _dive.move(
               lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-        else
-          _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
+        //else
+        //  _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
         lastSegment = s;
       }
       if (index == -1) {
         if (_depth > 0)
           _dive.move(
               lastSegment == null ? 0 : lastSegment.depth, _depth, _time);
-        else
-          _dive
-              .addSurfaceInterval(_time)
-              .addAllGasses(_dive.dives.first.gasses);
+        else {
+          Dive dive = new Dive();
+          dive.addAllGasses(_plan.dives.first.gasses);
+          dive.surfaceInterval = _time;
+          _plan.addDive(dive);
+        }
       }
       Navigator.of(context).pop();
     }
@@ -111,7 +111,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
       if (index == i)
-        return s.isSurfaceInterval ? 0 : dive.mbarToDepth(s.depth);
+        return dive.mbarToDepth(s.depth);
       i++;
     }
     return 30;
@@ -130,7 +130,7 @@ class _DiveSegmentState extends State<DiveSegment> {
     return 10;
   }
 
-  _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling);
+  _DiveSegmentState(this._appBar, this._plan, this._dive, this.index, this.ceiling);
 
   @override
   Widget build(BuildContext context) {

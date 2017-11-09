@@ -5,27 +5,26 @@ class GasEdit extends StatefulWidget {
   final AppBar appBar;
   final Gas gas;
   final Function _save;
-  final Segment segment;
+  final Dive dive;
 
   GasEdit(
       {Key key,
       this.appBar,
       this.gas,
-      this.segment,
-      void save(Segment segment, Gas original, Gas changed)})
+      this.dive,
+      void save(Dive dive, Gas original, Gas changed)})
       : _save = save,
         super(key: key);
 
   @override
-  _GasEditState createState() => new _GasEditState(appBar, gas, _save, segment);
+  _GasEditState createState() => new _GasEditState(appBar, gas, _save, dive);
 }
 
 class _GasEditState extends State<GasEdit> {
   final AppBar _appBar;
-  //final BottomNavigationBar _botNavBar;
   final Gas _gas;
   bool _decoGas = false;
-  final Segment _segment;
+  final Dive _dive;
   int _pO2;
   int _pHe;
   var _save;
@@ -47,7 +46,7 @@ class _GasEditState extends State<GasEdit> {
       Gas newGas = !_decoGas
           ? new Gas.bottom(_pO2 / 100.0, _pHe / 100.0, 1.4)
           : new Gas.deco(_pO2 / 100.0, _pHe / 100.0);
-      _save(_segment, _gas, newGas);
+      _save(_dive, _gas, newGas);
     }
   }
 
@@ -63,7 +62,7 @@ class _GasEditState extends State<GasEdit> {
     return null;
   }
 
-  _GasEditState(this._appBar, this._gas, this._save, this._segment)
+  _GasEditState(this._appBar, this._gas, this._save, this._dive)
       : _pO2 = (_gas.fO2 * 100).round(),
         _pHe = (_gas.fHe * 100).round();
 
@@ -99,7 +98,6 @@ class _GasEditState extends State<GasEdit> {
       key: _scaffoldKey,
       appBar: _appBar,
       body: new Form(key: _formKey, child: c3),
-      //bottomNavigationBar: _botNavBar,
     );
   }
 }

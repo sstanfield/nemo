@@ -136,27 +136,11 @@ class Segment {
   final double rawTime;
   final int time;
   final Gas gas;
-  final List<Gas> _gasses;
   final bool isCalculated;
   final int ceiling;
-  final bool isSurfaceInterval;
 
   Segment(this.type, this.depth, this.rawTime, this.time, this.gas,
-      this.isCalculated, this.ceiling)
-      : this.isSurfaceInterval = false,
-        this._gasses = null;
-  Segment.raw(this.type, this.depth, this.rawTime, this.time, this.gas,
-      this.isCalculated, this.ceiling, this.isSurfaceInterval, this._gasses);
-  Segment.surfaceInterval(int time)
-      : type = SegmentType.LEVEL,
-        depth = 0,
-        rawTime = time.toDouble(),
-        this.time = time,
-        gas = Gas.air,
-        isCalculated = false,
-        ceiling = 0,
-        isSurfaceInterval = true,
-        _gasses = new List<Gas>();
+      this.isCalculated, this.ceiling);
 
   static SegmentType segmentFromString(String str) {
     for (SegmentType e in SegmentType.values) {
@@ -183,9 +167,8 @@ class Segment {
     }
     bool isCalculated = map["isCalculated"];
     int ceiling = map["ceiling"];
-    bool isSurfaceInterval = map["isSurfaceInterval"];
-    return new Segment.raw(type, depth, rawTime, time, gas, isCalculated,
-        ceiling, isSurfaceInterval, _gasses);
+    return new Segment(type, depth, rawTime, time, gas, isCalculated,
+        ceiling);
   }
 
   String toJson() {
@@ -195,25 +178,9 @@ class Segment {
     m["rawTime"] = rawTime;
     m["time"] = time;
     m["gas"] = gas;
-    if (_gasses != null) m["_gasses"] = _gasses;
     m["isCalculated"] = isCalculated;
     m["ceiling"] = ceiling;
-    m["isSurfaceInterval"] = isSurfaceInterval;
     return JSON.encode(m);
-  }
-
-  List<Gas> get gasses =>
-      _gasses == null ? null : new List.unmodifiable(_gasses..sort());
-  void addGas(Gas gas) {
-    _gasses?.add(gas);
-  }
-
-  void removeGas(Gas gas) {
-    _gasses?.remove(gas);
-  }
-
-  void addAllGasses(List<Gas> g) {
-    _gasses?.addAll(g);
   }
 }
 
@@ -229,8 +196,12 @@ Use mm for distance (10ft = 3048mm)
 Use mbar for pressure.
  */
 class Dive {
-  List<double> _tN;
-  List<double> _tH;
+  static final int _compartments = 16;
+  final List<double> _tN = new List<double>(_compartments);
+  final List<double> _tH = new List<double>(_compartments);
+  final List<double> _initialN = new List<double>(_compartments);
+  final List<double> _initialH = new List<double>(_compartments);
+  bool _clearInitial = true;
   double _gfLo = .5;
   double _gfHi = .8;
   double _gfSlope; // null
@@ -241,7 +212,6 @@ class Dive {
   int _lastStop;
   int _stopSize;
   bool _metric = true;
-  final int _compartments = 16;
   //final double _partialWater = 056.7;
   final double _partialWater = 062.7;
   //final double _partialWater = 049.3;
@@ -339,10 +309,9 @@ class Dive {
 
   final List<Gas> _gasses = new List<Gas>();
   List<Segment> _segments = new List<Segment>();
+  int _surfaceInterval = 0;
 
   Dive.fromJson(String json) {
-    _tN = new List<double>(_compartments);
-    _tH = new List<double>(_compartments);
     Map<String, Object> map = JSON.decode(json);
     _lastStop = map["_lastStop"];
     _stopSize = map["_stopSize"];
@@ -353,6 +322,12 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
+    if (map.containsKey("_gasses")) {
+      _gasses.clear();
+      for (String str in map["_gasses"]) {
+        _gasses.add(new Gas.fromJson(str));
+      }
+    }
     if (map.containsKey("_segments")) {
       for (String str in map["_segments"]) {
         _segments.add(new Segment.fromJson(str));
@@ -372,6 +347,12 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
+    if (map.containsKey("_gasses")) {
+      _gasses.clear();
+      for (String str in map["_gasses"]) {
+        _gasses.add(new Gas.fromJson(str));
+      }
+    }
     _segments.clear();
     if (map.containsKey("_segments")) {
       for (String str in map["_segments"]) {
@@ -393,6 +374,7 @@ class Dive {
     m["_stopSize"] = _stopSize;
     m["_metric"] = _metric;
     m["_segments"] = _segments;
+    m["_gasses"] = _gasses;
     return JSON.encode(m);
   }
 
@@ -436,22 +418,30 @@ class Dive {
     return (_gfSlope * (stop - _stopSize - _atmPressure)) + _gfHi;
   }
 
-  void _clearTissues() {
+  void _clearInitialTissues() {
     double n2Partial = 0.79 * ((_atmPressure - _partialWater) / 1000.0);
     for (num i = 0; i < _compartments; i++) {
-      _tN[i] = n2Partial;
-      _tH[i] = 0.0;
+      _initialN[i] = n2Partial;
+      _initialH[i] = 0.0;
+    }
+  }
+
+  void _resetTissues() {
+    if (_clearInitial) _clearInitialTissues();
+    for (num i = 0; i < _compartments; i++) {
+      _tN[i] = _initialN[i];
+      _tH[i] = _initialH[i];
     }
   }
 
   void _reset({int atmDelta: 0}) {
-    _clearTissues();
+    _resetTissues();
     _segments.removeWhere((Segment s) => s.isCalculated);
     _gfSlope = null;
     List<Segment> s = _segments;
-    _segments = null;
-    List<List<Segment>> prevSegments = new List<List<Segment>>();
+    _segments = new List<Segment>();
     int tDepth = _atmPressure;
+    if (_surfaceInterval > 0) _bottomInt(_atmPressure, _surfaceInterval.toDouble(), Gas.air);
     for (final Segment e in s) {
       if (e.type == SegmentType.DOWN) {
         _descend(_descentRate, tDepth, e.depth + atmDelta, false);
@@ -462,41 +452,14 @@ class Dive {
         tDepth = e.depth + atmDelta;
       }
       if (e.type == SegmentType.LEVEL) {
-        if (e.isSurfaceInterval) {
-          // Surface interval, calc deco and save results then do next dive.
-          if (_segments != null) {
-            int fs = _firstStop(_gfLo);
-            _gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
-            _calcDecoInt(_nextGf(fs));
-          }
-          _bottomInt(_atmPressure, e.rawTime, Gas.air);
-          tDepth = _atmPressure;
-          if (_segments != null) prevSegments.add(_segments);
-          _segments = new List<Segment>();
-          _segments.add(e);
-          if (e._gasses.length > 0) {
-            _gasses.clear();
-            _gasses.addAll(e._gasses);
-          }
-        } else {
-          _bottom(e.depth + atmDelta, e.rawTime);
-          tDepth = e.depth + atmDelta;
-        }
+        _bottom(e.depth + atmDelta, e.rawTime);
+        tDepth = e.depth + atmDelta;
       }
     }
     if (_segments.length > 1) {
       int fs = _firstStop(_gfLo);
       _gfSlope = (_gfHi - _gfLo) / -(fs - _atmPressure);
       _calcDecoInt(_nextGf(fs));
-    }
-    if (prevSegments.length > 0) {
-      if (_segments.isNotEmpty) {
-        prevSegments.add(_segments);
-        _segments = new List<Segment>();
-      }
-      for (List<Segment> l in prevSegments) {
-        _segments.addAll(l);
-      }
     }
   }
 
@@ -658,11 +621,21 @@ class Dive {
   }
 
   Dive() {
-    _tN = new List<double>(_compartments);
-    _tH = new List<double>(_compartments);
+    _clearInitial = true;
     _lastStop = _depthMMToMbar(3000);
     _stopSize = _rateMMToMbar(3000);
-    addSurfaceInterval(0);
+    _reset();
+  }
+
+  void setInitialLoadings(Dive dive) {
+    if (dive == null) _clearInitial = true;
+    else {
+      _clearInitial = false;
+      for (num i = 0; i < _compartments; i++) {
+        _initialN[i] = dive._tN[i];
+        _initialH[i] = dive._tH[i];
+      }
+    }
     _reset();
   }
 
@@ -677,7 +650,7 @@ class Dive {
     _stopSize = _rateMMToMbar(_metric?3000:3048);
     _gasses.clear();
     _segments.clear();
-    addSurfaceInterval(0);
+    _clearInitial = true;
     _reset();
   }
 
@@ -700,11 +673,15 @@ class Dive {
     _reset();
   }
 
+  int get surfaceInterval => _surfaceInterval;
+  set surfaceInterval(int i) {
+    _surfaceInterval = i;
+    _reset();
+  }
+
   void clearSegments() {
-    Segment s = _segments.first;
     _segments.clear();
-    _clearTissues();
-    _segments.add(s);
+    _resetTissues();
   }
 
   set atmPressure(int atmPressure) {
@@ -728,12 +705,6 @@ class Dive {
 
   void addBottom(int depth, int time) {
     _bottom(depthToMbar(depth), time.toDouble());
-  }
-
-  Segment addSurfaceInterval(int time) {
-    Segment s = new Segment.surfaceInterval(time);
-    _segments.add(s);
-    return s;
   }
 
   void move(int from, int to, int time) {
@@ -771,7 +742,86 @@ class Dive {
   set descentRate(int rate) => _descentRate = rateToMbar(rate);
 
   List<Segment> get segments =>
-      new List.unmodifiable(_segments.getRange(1, _segments.length));
-  List<Segment> get dives => new List.unmodifiable(
-      _segments.where((Segment s) => s.isSurfaceInterval));
+      new List.unmodifiable(_segments);
+
+  List<Gas> get gasses => _gasses == null ? null : new List.unmodifiable(_gasses..sort());
+  void addGas(Gas gas) {
+    _gasses?.add(gas);
+  }
+
+  void removeGas(Gas gas) {
+    _gasses?.remove(gas);
+  }
+
+  void addAllGasses(List<Gas> g) {
+    _gasses?.addAll(g);
+  }
+}
+
+class Plan {
+  final List<Dive> _dives = new List<Dive>();
+  bool _metric = true;
+
+  Plan() {
+    _dives.add(new Dive());
+  }
+
+  Plan.fromJson(String json) {
+    Map<String, Object> map = JSON.decode(json);
+    metric = map["_metric"];
+    if (map.containsKey("_dives")) {
+      for (String str in map["_dives"]) {
+        _dives.add(new Dive.fromJson(str));
+      }
+    }
+    calcDeco();
+  }
+
+  void loadJson(String json) {
+    Map<String, Object> map = JSON.decode(json);
+    metric = map["_metric"];
+    if (map.containsKey("_dives")) {
+      _dives.clear();
+      for (String str in map["_dives"]) {
+        _dives.add(new Dive.fromJson(str));
+      }
+    }
+    calcDeco();
+  }
+
+  String toJson() {
+    var m = new Map<String, Object>();
+    m["_metric"] = _metric;
+    m["_dives"] = _dives;
+    return JSON.encode(m);
+  }
+
+  bool get metric => _metric;
+  set metric(bool metric) {
+    _metric = metric;
+    for (Dive d in _dives) {
+      d.metric = metric;
+    }
+  }
+
+  void addDive(Dive dive) {
+    _dives.add(dive);
+    calcDeco();
+  }
+
+  void calcDeco() {
+    Dive prevDive;
+    for (Dive d in _dives) {
+      d.setInitialLoadings(prevDive);
+      d.calcDeco();
+      prevDive = d;
+    }
+  }
+
+  void reset() {
+    _dives.clear();
+    _dives.add(new Dive());
+  }
+
+  List<Dive> get dives => new List.unmodifiable(_dives);
 }

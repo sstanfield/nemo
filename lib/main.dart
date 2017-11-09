@@ -35,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 enum MenuOptions { metric, imperial, reset }
 
 class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-  Dive _dive = new Dive();
+  Plan _plan = new Plan();
 
   Future<File> _getLocalFile() async {
     // get the path to the document directory.
@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      var json = _dive.toJson();
+      var json = _plan.toJson();
       _getLocalFile().then((File f) => f.writeAsString(json));
     }
   }
@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     _readState().then((String value) {
       setState(() {
         if (value.length > 0) {
-          _dive.loadJson(value);
+          _plan.loadJson(value);
         }
       });
     });
@@ -80,13 +80,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   void _menuSelected(MenuOptions opt) {
     switch (opt) {
       case MenuOptions.metric:
-        setState(() => _dive.metric = true);
+        setState(() => _plan.metric = true);
         break;
       case MenuOptions.imperial:
-        setState(() => _dive.metric = false);
+        setState(() => _plan.metric = false);
         break;
       case MenuOptions.reset:
-        setState(() => _dive.resetAllData());
+        setState(() => _plan.reset());
         break;
     }
 
@@ -98,12 +98,12 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       onSelected: _menuSelected,
       itemBuilder: (BuildContext context) => <PopupMenuEntry<MenuOptions>>[
         new CheckedPopupMenuItem<MenuOptions>(
-          checked: _dive.metric,
+          checked: _plan.metric,
           value: MenuOptions.metric,
           child: const Text('Metric'),
         ),
         new CheckedPopupMenuItem<MenuOptions>(
-          checked: !_dive.metric,
+          checked: !_plan.metric,
           value: MenuOptions.imperial,
           child: const Text('Imperial'),
         ),
@@ -119,6 +119,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       actions: [menu],
     );
 
-    return new DiveConfig(appBar, _dive);
+    return new DiveConfig(appBar, _plan);
   }
 }

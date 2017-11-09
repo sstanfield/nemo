@@ -106,7 +106,6 @@ class _GeneralSettingsState extends State<GeneralSettings> {
       key: _scaffoldKey,
       appBar: _appBar,
       body: new Form(key: _formKey, child: c3),
-      //bottomNavigationBar: _botNavBar,
     );
   }
 }
