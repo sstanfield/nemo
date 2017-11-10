@@ -4,21 +4,19 @@ import '../deco/plan.dart';
 class DiveSegment extends StatefulWidget {
   final AppBar appBar;
   final Dive dive;
-  final Plan plan;
   final int index;
   final int ceiling;
 
-  DiveSegment({Key key, this.appBar, this.plan, this.dive, this.index, this.ceiling})
+  DiveSegment({Key key, this.appBar, this.dive, this.index, this.ceiling})
       : super(key: key);
 
   @override
   _DiveSegmentState createState() =>
-      new _DiveSegmentState(appBar, plan, dive, index, ceiling);
+      new _DiveSegmentState(appBar, dive, index, ceiling);
 }
 
 class _DiveSegmentState extends State<DiveSegment> {
   final Dive _dive;
-  final Plan _plan;
   final AppBar _appBar;
   final int ceiling;
   final int index;
@@ -61,22 +59,14 @@ class _DiveSegmentState extends State<DiveSegment> {
       _dive.clearSegments();
       lastSegment = null;
       for (Segment s in segments) {
-        if (s.depth > 0)
-          _dive.move(
-              lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
-        //else
-        //  _dive.addSurfaceInterval(s.time).addAllGasses(s.gasses);
+        _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
         lastSegment = s;
       }
       if (index == -1) {
-        if (_depth > 0)
-          _dive.move(
-              lastSegment == null ? 0 : lastSegment.depth, _depth, _time);
-        else {
-          Dive dive = new Dive();
-          dive.addAllGasses(_plan.dives.first.gasses);
-          dive.surfaceInterval = _time;
-          _plan.addDive(dive);
+        if (_depth == 0 && _dive.segments.length == 0) {
+          _dive.surfaceInterval = _time;
+        } else {
+          _dive.move(lastSegment == null ? 0 : lastSegment.depth, _depth, _time);
         }
       }
       Navigator.of(context).pop();
@@ -130,14 +120,13 @@ class _DiveSegmentState extends State<DiveSegment> {
     return 10;
   }
 
-  _DiveSegmentState(this._appBar, this._plan, this._dive, this.index, this.ceiling);
+  _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling);
 
   @override
   Widget build(BuildContext context) {
     ListView c3 =
         new ListView(padding: const EdgeInsets.all(20.0), children: <Widget>[
       new Text("Ceiling: $ceiling"),
-      new Text("NOTE: Add a depth of 0 to add a surface interval and start a new dive."),
       new TextFormField(
           initialValue: "${_getDepth(_dive, index)}",
           onSaved: (String val) =>

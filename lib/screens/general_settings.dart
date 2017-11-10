@@ -64,6 +64,15 @@ class _GeneralSettingsState extends State<GeneralSettings> {
     return null;
   }
 
+  String _validateSurfaceInterval(String rate) {
+    int irate = -1;
+    try {
+      irate = int.parse(rate);
+    } catch (ignored) {}
+    if (irate < 0 || irate > 14400) return "Enter Surface Interval Minutes (0-14,400 (10 days))";
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     ListView c3 = new ListView(children: [
@@ -96,6 +105,12 @@ class _GeneralSettingsState extends State<GeneralSettings> {
           onSaved: (String val) => _dive.ascentRate = int.parse(val),
           validator: _validateRate,
           decoration: new InputDecoration(labelText: "Ascent (${_dive.metric?"M":"ft"}/min):"),
+          keyboardType: TextInputType.number),
+      new TextFormField(
+          initialValue: "${_dive.surfaceInterval}",
+          onSaved: (String val) => _dive.surfaceInterval = int.parse(val),
+          validator: _validateSurfaceInterval,
+          decoration: new InputDecoration(labelText: "Surface Interval Min:"),
           keyboardType: TextInputType.number),
       new FlatButton(
         child: const Text('Save'),

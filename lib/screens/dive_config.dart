@@ -43,34 +43,7 @@ class _DiveConfigState extends State<DiveConfig> {
   Widget _makeSettingsBody() {
     return new Padding(
         padding: const EdgeInsets.all(10.0),
-        child: new Column(children: [
-          new Row(children: [
-            new Text("Gradient factors:  "),
-            new Text("${_plan.dives.first.gfLo.toString()}/${_plan.dives.first.gfHi.toString()}")
-          ]),
-          new Row(children: [
-            new Text("ATM Pressure:  "),
-            new Text("${_plan.dives.first.atmPressure}")
-          ]),
-          new Row(children: [
-            new Text("Descent:  "),
-            new Text("${_plan.dives.first.descentRate} ${_plan.metric?"M":"ft"}/min")
-          ]),
-          new Row(children: [
-            new Text("Ascent:  "),
-            new Text("${_plan.dives.first.ascentRate} ${_plan.metric?"M":"ft"}/min")
-          ]),
-          new IconButton(
-            icon: new Icon(Icons.edit),
-            tooltip: 'Edit Dive Settings',
-            onPressed: () {
-              Navigator.of(context).push(
-                  new MaterialPageRoute<Null>(builder: (BuildContext context) {
-                return new GeneralSettings(appBar: _appBar, dive: _plan.dives.first);
-              }));
-            },
-          ),
-        ]));
+        child: new Column(children: _diveSettings()));
   }
 
   Widget _makeGassesBody() {
@@ -93,7 +66,7 @@ class _DiveConfigState extends State<DiveConfig> {
         });
     _epanels.add(new _ExpansionItem(
       headerBuilder: (BuildContext context, bool isExpanded) =>
-          _expansionTitle("Settings"),
+          _expansionTitle("Dive Settings"),
       bodyBuilder: _makeSettingsBody,
     ));
     _epanels.add(new _ExpansionItem(
@@ -104,6 +77,32 @@ class _DiveConfigState extends State<DiveConfig> {
         headerBuilder: (BuildContext context, bool isExpanded) =>
             _expansionTitle("Dive Segments"),
         bodyBuilder: _makeSegmentsBody));
+  }
+
+  Widget _diveSettingWidget(Dive dive, bool allowDelete, int idx) {
+    Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
+      new Expanded(
+          child: new Text("Dive $idx ${dive.gfLo.toString()}/${dive.gfHi.toString()}")),
+      new IconButton(
+        icon: new Icon(Icons.edit),
+        tooltip: 'Edit Dive Settings',
+        onPressed: () {
+          Navigator.of(context).push(
+              new MaterialPageRoute<Null>(builder: (BuildContext context) {
+                return new GeneralSettings(appBar: _appBar, dive: dive);
+              }));
+        },
+      ),
+    ]);
+    Widget ret;
+    if (allowDelete)
+      ret = new Chip(
+        label: label,
+        onDeleted: () => setState(() => _removeDive(idx)),
+      );
+    else
+      ret = new Chip(label: label);
+    return ret;
   }
 
   Widget _gasWidget(Dive dive, Gas g, bool allowDelete) {
@@ -130,6 +129,10 @@ class _DiveConfigState extends State<DiveConfig> {
     else
       ret = new Chip(label: label);
     return ret;
+  }
+
+  void _removeDive(int index) {
+    _plan.removeDive(index - 1);
   }
 
   void _removeSegment(Dive dive, int index) {
@@ -170,7 +173,7 @@ class _DiveConfigState extends State<DiveConfig> {
           Navigator.of(context).push(
               new MaterialPageRoute<Null>(builder: (BuildContext context) {
             return new DiveSegment(
-                appBar: _appBar, plan: _plan, dive: dive, index: idx, ceiling: ceiling);
+                appBar: _appBar, dive: dive, index: idx, ceiling: ceiling);
           }));
         },
       ),
@@ -186,36 +189,62 @@ class _DiveConfigState extends State<DiveConfig> {
     return ret;
   }
 
-  List<Widget> _gasses() {
+  List<Widget> _diveSettings() {
     List<Widget> gchildren = new List<Widget>();
-    List<Dive> dives = _plan.dives;
-    int idx = 1;
-    for (final dive in dives) {
-      if (idx > 1) gchildren.add(new Divider());
-      gchildren.add(new Padding(
-          padding: const EdgeInsets.all(2.0), child: new Text("Dive $idx")));
-      bool allowDelete = dive.gasses.length > 1;
-      for (final g in dive.gasses) {
-        gchildren.add(new Padding(
-            padding: const EdgeInsets.all(2.0),
-            child: _gasWidget(dive, g, allowDelete)));
+    int diveNum = 0;
+    for (final dive in _plan.dives) {
+      diveNum++;
+      bool allowDelete = _plan.dives.length > 1;
+          gchildren.add(new Padding(
+              padding: const EdgeInsets.all(2.0),
+              child: _diveSettingWidget(
+                  dive,
+                  allowDelete,
+                  diveNum)));
       }
       gchildren.add(new Padding(
           padding: const EdgeInsets.all(2.0),
           child: new IconButton(
             icon: new Icon(Icons.add),
-            tooltip: 'Add Gas',
+            tooltip: 'Add Dive',
             onPressed: () {
-              Navigator.of(context).push(
-                  new MaterialPageRoute<Null>(builder: (BuildContext context) {
+              setState(() {
+                Dive d = new Dive();
+                _plan.addDive(d);
+              });
+            },
+          )));
+    return gchildren;
+  }
+
+  List<Widget> _gasses() {
+    List<Widget> gchildren = new List<Widget>();
+    List<Dive> dives = _plan.dives;
+    int idx = 1;
+    for (final dive in dives) {
+      Widget plusButton = new IconButton(
+        icon: new Icon(Icons.add),
+        tooltip: 'Add Gas',
+        onPressed: () {
+          Navigator.of(context).push(
+              new MaterialPageRoute<Null>(builder: (BuildContext context) {
                 return new GasEdit(
                     appBar: _appBar,
                     gas: new Gas.bottom(.21, .0, 1.2),
                     dive: dive,
                     save: _saveGas);
               }));
-            },
-          )));
+        },
+      );
+      if (idx > 1) gchildren.add(new Divider());
+      gchildren.add(new Padding(
+          padding: const EdgeInsets.all(2.0), child: new Row(children: [new Text("Dive $idx"), plusButton])));
+      bool allowDelete = dive.gasses.length > 1;
+      for (final g in dive.gasses) {
+        gchildren.add(new Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: _gasWidget(dive, g, allowDelete)));
+      }
       idx++;
     }
     return gchildren;
@@ -226,14 +255,31 @@ class _DiveConfigState extends State<DiveConfig> {
     int diveNum = 0;
     for (final dive in _plan.dives) {
       diveNum++;
+      List<Segment> segs = new List<Segment>();
+      segs.addAll(dive.segments.where((Segment s) => !s.isCalculated));
+      int ceiling = segs.length>0?dive.mbarToDepth(segs.last.ceiling):0;
+      Widget plusButton = new IconButton(
+        icon: new Icon(Icons.add),
+        tooltip: 'Add Segment',
+        onPressed: () {
+          Navigator.of(context).push(
+              new MaterialPageRoute<Null>(builder: (BuildContext context) {
+                return new DiveSegment(
+                    appBar: _appBar,
+                    dive: dive,
+                    index: -1,
+                    ceiling: ceiling);
+              }));
+        },
+      );
       gchildren.add(new Padding(
           padding: const EdgeInsets.all(2.0),
-          child: new Text("Dive #$diveNum")));
-      bool allowDelete = dive.segments.where((Segment s) => s.type == SegmentType.LEVEL && !s.isCalculated).length > 1;
+          child: new Row(children: [new Text("Dive $diveNum"), plusButton])));
+      bool allowDelete = true;
       Segment prev;
       int idx = 0;
-      int ceiling = 0;
-      for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
+      ceiling = 0;
+      for (final s in segs) {
         if (s.type == SegmentType.LEVEL) {
           int time = s.time;
           if (prev != null && prev.type != SegmentType.LEVEL) time += prev.time;
@@ -251,23 +297,6 @@ class _DiveConfigState extends State<DiveConfig> {
         prev = s;
         idx++;
       }
-      gchildren.add(new Padding(
-          padding: const EdgeInsets.all(2.0),
-          child: new IconButton(
-            icon: new Icon(Icons.add),
-            tooltip: 'Add Segment',
-            onPressed: () {
-              Navigator.of(context).push(
-                  new MaterialPageRoute<Null>(builder: (BuildContext context) {
-                    return new DiveSegment(
-                        appBar: _appBar,
-                        plan: _plan,
-                        dive: dive,
-                        index: -1,
-                        ceiling: ceiling);
-                  }));
-            },
-          )));
     }
     return gchildren;
   }

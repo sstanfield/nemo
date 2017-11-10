@@ -322,6 +322,7 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
+    _surfaceInterval = map.containsKey("_surfaceInterval")?map["_surfaceInterval"]:0;
     if (map.containsKey("_gasses")) {
       _gasses.clear();
       for (String str in map["_gasses"]) {
@@ -347,6 +348,7 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
+    _surfaceInterval = map.containsKey("_surfaceInterval")?map["_surfaceInterval"]:0;
     if (map.containsKey("_gasses")) {
       _gasses.clear();
       for (String str in map["_gasses"]) {
@@ -373,6 +375,7 @@ class Dive {
     m["_lastStop"] = _lastStop;
     m["_stopSize"] = _stopSize;
     m["_metric"] = _metric;
+    m["_surfaceInterval"] = _surfaceInterval;
     m["_segments"] = _segments;
     m["_gasses"] = _gasses;
     return JSON.encode(m);
@@ -824,4 +827,8 @@ class Plan {
   }
 
   List<Dive> get dives => new List.unmodifiable(_dives);
+
+  void removeDive(int idx) {
+    if (_dives.length > 1) _dives.removeAt(idx);
+  }
 }
