@@ -28,6 +28,7 @@ class _ExpansionItem {
 class _DiveConfigState extends State<DiveConfig> {
   final Plan _plan;
   final AppBar _appBar;
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   List<_ExpansionItem> _epanels = new List<_ExpansionItem>();
   var _saveGas;
 
@@ -317,6 +318,7 @@ class _DiveConfigState extends State<DiveConfig> {
       new Card(child: new DivePlan(_plan)),
     ]);
     return new Scaffold(
+      key: _scaffoldKey,
       appBar: _appBar,
       body: c3,
     );

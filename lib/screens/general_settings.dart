@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'widgets/int_edit.dart';
+import 'widgets/common_form_buttons.dart';
 import '../deco/plan.dart';
 
 class GeneralSettings extends StatefulWidget {
@@ -36,86 +38,34 @@ class _GeneralSettingsState extends State<GeneralSettings> {
     }
   }
 
-  String _validateGf(String gf) {
-    int igf = -1;
-    try {
-      igf = int.parse(gf);
-    } catch (ignored) {}
-    if (igf < 0 || igf > 100) return "Enter gradiant factor 0-100";
-    return null;
-  }
-
-  String _validateAtm(String atm) {
-    int iatm = -1;
-    try {
-      iatm = int.parse(atm);
-    } catch (ignored) {}
-    if (iatm < 500 || iatm > 3000)
-      return "Enter surface pressure in mbar (500-3000)";
-    return null;
-  }
-
-  String _validateRate(String rate) {
-    int irate = -1;
-    try {
-      irate = int.parse(rate);
-    } catch (ignored) {}
-    if (irate < 1 || irate > 300) return "Enter M/min (1-300)";
-    return null;
-  }
-
-  String _validateSurfaceInterval(String rate) {
-    int irate = -1;
-    try {
-      irate = int.parse(rate);
-    } catch (ignored) {}
-    if (irate < 0 || irate > 14400) return "Enter Surface Interval Minutes (0-14,400 (10 days))";
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     ListView c3 = new ListView(children: [
-      new TextFormField(
-          initialValue: "${_dive.gfLo}",
-          onSaved: (String val) => _dive.gfLo = int.parse(val),
-          validator: _validateGf,
-          decoration: new InputDecoration(labelText: "gfLo:"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_dive.gfHi}",
-          onSaved: (String val) => _dive.gfHi = int.parse(val),
-          validator: _validateGf,
-          decoration: new InputDecoration(labelText: "gfHi:"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_dive.atmPressure}",
-          onSaved: (String val) => _dive.atmPressure = int.parse(val),
-          validator: _validateAtm,
-          decoration: new InputDecoration(labelText: "ATM Pressure:"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_dive.descentRate}",
-          onSaved: (String val) => _dive.descentRate = int.parse(val),
-          validator: _validateRate,
-          decoration: new InputDecoration(labelText: "Descent (${_dive.metric?"M":"ft"}/min):"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_dive.ascentRate}",
-          onSaved: (String val) => _dive.ascentRate = int.parse(val),
-          validator: _validateRate,
-          decoration: new InputDecoration(labelText: "Ascent (${_dive.metric?"M":"ft"}/min):"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_dive.surfaceInterval}",
-          onSaved: (String val) => _dive.surfaceInterval = int.parse(val),
-          validator: _validateSurfaceInterval,
-          decoration: new InputDecoration(labelText: "Surface Interval Min:"),
-          keyboardType: TextInputType.number),
-      new FlatButton(
-        child: const Text('Save'),
-        onPressed: _handleSubmitted,
-      ),
+      new IntEdit(initialValue: _dive.gfLo,
+          onSaved: (int v) => _dive.gfLo = v,
+          validator: (int v) => (v < 0 || v > 100)?"Enter gradiant factor 0-100":null,
+          label: "gfLo"),
+      new IntEdit(initialValue: _dive.gfHi,
+          onSaved: (int v) => _dive.gfHi = v,
+          validator: (int v) => (v < 0 || v > 100)?"Enter gradiant factor 0-100":null,
+          label: "gfHi"),
+      new IntEdit(initialValue: _dive.atmPressure,
+          onSaved: (int v) => _dive.atmPressure = v,
+          validator: (int v) => (v < 500 || v > 3000)?"Enter surface pressure in mbar (500-3000)":null,
+          label: "ATM Pressure"),
+      new IntEdit(initialValue: _dive.descentRate,
+          onSaved: (int v) => _dive.descentRate = v,
+          validator: (int v) => (v < 1 || v > (_dive.metric?300:900))?"Enter Descent Rate ${_dive.metric?"M":"ft"}/min (1-${_dive.metric?"300":"900"})":null,
+          label: "Descent (${_dive.metric?"M":"ft"}/min):"),
+      new IntEdit(initialValue: _dive.ascentRate,
+          onSaved: (int v) => _dive.ascentRate = v,
+          validator: (int v) => (v < 1 || v > (_dive.metric?300:900))?"Enter Ascent Rate ${_dive.metric?"M":"ft"}/min (1-${_dive.metric?"300":"900"})":null,
+          label: "Ascent (${_dive.metric?"M":"ft"}/min):"),
+      new IntEdit(initialValue: _dive.surfaceInterval,
+          onSaved: (int v) => _dive.surfaceInterval = v,
+          validator: (int v) => (v < 0 || v > 14400)?"Enter Surface Interval Minutes (0-14,400 (10 days))":null,
+          label: "Surface Interval Min"),
+      new CommonButtons(formKey: _formKey, submit: _handleSubmitted),
     ]);
     return new Scaffold(
       key: _scaffoldKey,

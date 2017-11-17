@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'widgets/int_edit.dart';
+import 'widgets/common_form_buttons.dart';
 import '../deco/plan.dart';
 
 class GasEdit extends StatefulWidget {
@@ -50,18 +52,6 @@ class _GasEditState extends State<GasEdit> {
     }
   }
 
-  String _validateGas(String gas) {
-    int igas = -1;
-    if (gas.length == 0)
-      igas = 0;
-    else
-      try {
-        igas = int.parse(gas);
-      } catch (ignored) {}
-    if (igas < 0 || igas > 100) return "Enter gas percent 0-100";
-    return null;
-  }
-
   _GasEditState(this._appBar, this._gas, this._save, this._dive)
       : _pO2 = (_gas.fO2 * 100).round(),
         _pHe = (_gas.fHe * 100).round();
@@ -69,30 +59,23 @@ class _GasEditState extends State<GasEdit> {
   @override
   Widget build(BuildContext context) {
     Column c3 = new Column(children: [
-      new TextFormField(
-          initialValue: "$_pO2",
-          onSaved: (String val) => _pO2 = val.length == 0 ? 0 : int.parse(val),
-          validator: _validateGas,
-          decoration: new InputDecoration(labelText: "O2 %:"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "$_pHe",
-          onSaved: (String val) => _pHe = val.length == 0 ? 0 : int.parse(val),
-          validator: _validateGas,
-          decoration: new InputDecoration(labelText: "He %:"),
-          keyboardType: TextInputType.number),
+      new IntEdit(initialValue: _pO2,
+          onSaved: (int v) => _pO2 = v,
+          validator: (int v) => (v < 0 || v > 100)?"Enter O2 percent 0-100":null,
+          label: "O2 %"),
+      new IntEdit(initialValue: _pHe,
+          onSaved: (int v) => _pHe = v,
+          validator: (int v) => (v < 0 || v > 100)?"Enter He percent 0-100":null,
+          label: "He %"),
       new Row(children: [
         new Checkbox(
             value: _decoGas,
             onChanged: (bool v) => setState(() {
-                  _decoGas = v;
-                })),
+              _decoGas = v;
+            })),
         const Text('Deco Gas')
       ]),
-      new FlatButton(
-        child: const Text('Save'),
-        onPressed: _handleSubmitted,
-      ),
+      new CommonButtons(formKey: _formKey, submit: _handleSubmitted),
     ]);
     return new Scaffold(
       key: _scaffoldKey,

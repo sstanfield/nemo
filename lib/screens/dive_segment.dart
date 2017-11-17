@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'widgets/int_edit.dart';
+import 'widgets/common_form_buttons.dart';
 import '../deco/plan.dart';
 
 class DiveSegment extends StatefulWidget {
@@ -73,30 +75,6 @@ class _DiveSegmentState extends State<DiveSegment> {
     }
   }
 
-  String _validateDepth(String depth) {
-    int idepth = -1;
-    if (depth.length == 0)
-      idepth = 0;
-    else
-      try {
-        idepth = int.parse(depth);
-      } catch (ignored) {}
-    if (idepth < 0 || idepth > 1000) return "Enter depth 0-1000";
-    return null;
-  }
-
-  String _validateTime(String time) {
-    int itime = -1;
-    if (time.length == 0)
-      itime = 0;
-    else
-      try {
-        itime = int.parse(time);
-      } catch (ignored) {}
-    if (itime < 0 || itime > 1000) return "Enter time 0-1000";
-    return null;
-  }
-
   static int _getDepth(Dive dive, int index) {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
@@ -127,23 +105,15 @@ class _DiveSegmentState extends State<DiveSegment> {
     ListView c3 =
         new ListView(padding: const EdgeInsets.all(20.0), children: <Widget>[
       new Text("Ceiling: $ceiling"),
-      new TextFormField(
-          initialValue: "${_getDepth(_dive, index)}",
-          onSaved: (String val) =>
-              _depth = val.length == 0 ? 0 : int.parse(val),
-          validator: _validateDepth,
-          decoration: new InputDecoration(labelText: "Depth:"),
-          keyboardType: TextInputType.number),
-      new TextFormField(
-          initialValue: "${_getTime(_dive, index)}",
-          onSaved: (String val) => _time = val.length == 0 ? 0 : int.parse(val),
-          validator: _validateTime,
-          decoration: new InputDecoration(labelText: "Time:"),
-          keyboardType: TextInputType.number),
-      new FlatButton(
-        child: const Text('Save'),
-        onPressed: _handleSubmitted,
-      ),
+      new IntEdit(initialValue: _getDepth(_dive, index),
+          onSaved: (int v) => _depth = v,
+          validator: (int v) => (v < 0 || v > 1000)?"Enter Depth 0-1000":null,
+          label: "Depth"),
+      new IntEdit(initialValue: _getTime(_dive, index),
+          onSaved: (int v) => _time = v,
+          validator: (int v) => (v < 0 || v > 1000)?"Enter Time 0-1000":null,
+          label: "Time"),
+      new CommonButtons(formKey: _formKey, submit: _handleSubmitted),
     ]);
     return new Scaffold(
       key: _scaffoldKey,
