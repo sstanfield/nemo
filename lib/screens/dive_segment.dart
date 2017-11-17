@@ -102,19 +102,19 @@ class _DiveSegmentState extends State<DiveSegment> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> children = new List<Widget>();
+    if (ceiling > 0) children.add(new Text("Ceiling: $ceiling${_dive.metric?"M":"ft"}"));
+    children.add(new IntEdit(initialValue: _getDepth(_dive, index),
+        onSaved: (int v) => _depth = v,
+        validator: (int v) => (v < ceiling || v > 1000)?"Enter Depth $ceiling-1000":null,
+        label: "Depth"));
+    children.add(new IntEdit(initialValue: _getTime(_dive, index),
+        onSaved: (int v) => _time = v,
+        validator: (int v) => (v < 0 || v > 1000)?"Enter Time 0-1000":null,
+        label: "Time"));
+    children.add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
     ListView c3 =
-        new ListView(padding: const EdgeInsets.all(20.0), children: <Widget>[
-      new Text("Ceiling: $ceiling"),
-      new IntEdit(initialValue: _getDepth(_dive, index),
-          onSaved: (int v) => _depth = v,
-          validator: (int v) => (v < 0 || v > 1000)?"Enter Depth 0-1000":null,
-          label: "Depth"),
-      new IntEdit(initialValue: _getTime(_dive, index),
-          onSaved: (int v) => _time = v,
-          validator: (int v) => (v < 0 || v > 1000)?"Enter Time 0-1000":null,
-          label: "Time"),
-      new CommonButtons(formKey: _formKey, submit: _handleSubmitted),
-    ]);
+        new ListView(padding: const EdgeInsets.all(8.0), children: children);
     return new Scaffold(
       key: _scaffoldKey,
       appBar: _appBar,

@@ -40,7 +40,7 @@ class _GeneralSettingsState extends State<GeneralSettings> {
 
   @override
   Widget build(BuildContext context) {
-    ListView c3 = new ListView(children: [
+    ListView c3 = new ListView(padding: const EdgeInsets.all(8.0), children: [
       new IntEdit(initialValue: _dive.gfLo,
           onSaved: (int v) => _dive.gfLo = v,
           validator: (int v) => (v < 0 || v > 100)?"Enter gradiant factor 0-100":null,

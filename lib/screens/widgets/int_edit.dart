@@ -5,6 +5,7 @@ class IntEdit extends StatelessWidget {
   final FormFieldSetter<int> onSaved;
   final FormFieldValidator<int> validator;
   final String label;
+  final double padding;
 
   IntEdit({
     Key key,
@@ -12,12 +13,13 @@ class IntEdit extends StatelessWidget {
     this.onSaved,
     this.validator,
     this.label,
+    this.padding = 0.0,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return new Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: new EdgeInsets.symmetric(horizontal: padding),
         child:
         new TextFormField(
             initialValue: "$initialValue",

@@ -58,7 +58,7 @@ class _GasEditState extends State<GasEdit> {
 
   @override
   Widget build(BuildContext context) {
-    Column c3 = new Column(children: [
+    ListView c3 = new ListView(padding: const EdgeInsets.all(8.0), children: [
       new IntEdit(initialValue: _pO2,
           onSaved: (int v) => _pO2 = v,
           validator: (int v) => (v < 0 || v > 100)?"Enter O2 percent 0-100":null,
