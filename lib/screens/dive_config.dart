@@ -166,7 +166,7 @@ class _DiveConfigState extends State<DiveConfig> {
       int ceiling) {
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
-          child: new Text("${depth}M, $time min")),
+          child: new Text("${depth}${dive.metric?"M":"ft"}, $time min")),
       new IconButton(
         icon: new Icon(Icons.edit),
         tooltip: 'Edit Segment',
