@@ -25,7 +25,7 @@ class GasEdit extends StatefulWidget {
 class _GasEditState extends State<GasEdit> {
   final AppBar _appBar;
   final Gas _gas;
-  bool _decoGas = false;
+  bool _decoGas;
   final Dive _dive;
   int _pO2;
   int _pHe;
@@ -54,7 +54,8 @@ class _GasEditState extends State<GasEdit> {
 
   _GasEditState(this._appBar, this._gas, this._save, this._dive)
       : _pO2 = (_gas.fO2 * 100).round(),
-        _pHe = (_gas.fHe * 100).round();
+        _pHe = (_gas.fHe * 100).round(),
+        _decoGas = (_gas.useAscent && !_gas.useDescent);
 
   @override
   Widget build(BuildContext context) {
