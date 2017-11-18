@@ -41,7 +41,7 @@ class DivePlan extends StatelessWidget {
       col1.add(new Text("Type", style: headerStyle));
       col2.add(new Text("Depth", style: headerStyle));
       col3.add(new Text("Stop", style: headerStyle));
-      col4.add(new Text("Runtime", style: headerStyle));
+      col4.add(new Text("Time", style: headerStyle));
       col5.add(new Text("Gas", style: headerStyle));
       col6.add(new Text("PPO2", style: headerStyle));
       if (diveNum > 1) rows.add(new Divider(height: 24.0,));
