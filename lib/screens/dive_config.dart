@@ -148,7 +148,7 @@ class _DiveConfigState extends State<DiveConfig> {
                   ? lastSegment.time
                   : 0);
           segments.add(new Segment(s.type, dive.mbarToDepth(s.depth), 0.0,
-              tmptime, s.gas, false, s.ceiling));
+              tmptime, s.gas, false, s.ceiling, s.otu, s.cns));
         }
       }
       lastSegment = s;
@@ -166,7 +166,7 @@ class _DiveConfigState extends State<DiveConfig> {
       int ceiling) {
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
-          child: new Text("${depth}${dive.metric?"M":"ft"}, $time min")),
+          child: new Text("$depth${dive.metric?"M":"ft"}, $time min")),
       new IconButton(
         icon: new Icon(Icons.edit),
         tooltip: 'Edit Segment',

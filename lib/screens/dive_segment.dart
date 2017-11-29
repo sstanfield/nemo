@@ -49,10 +49,10 @@ class _DiveSegmentState extends State<DiveSegment> {
                   ? lastSegment.time
                   : 0);
           if (index == i) {
-            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0));
+            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0, 0.0, 0.0));
           } else {
             segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
-                    s.gas, false, s.ceiling));
+                    s.gas, false, s.ceiling, s.otu, s.cns));
           }
         }
         lastSegment = s;
