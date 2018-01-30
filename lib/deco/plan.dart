@@ -408,8 +408,17 @@ class Dive {
     return mbar * 10;
   }
 
+  static Gas _findGasForSetpoint(Gas dil, double setpoint, double atm) {
+    double o2percent = setpoint / atm;
+    if (o2percent < dil.fO2) return dil;
+    //double n2percent = (dil.fN2 / (dil.fN2 + dil.fHe)) * (1.0 - o2percent);
+    double hePercent = (dil.fHe / (dil.fN2 + dil.fHe)) * (1.0 - o2percent);
+    return new Gas.bottom(o2percent, hePercent, setpoint);
+  }
+
   static Gas _findGas(
       List<Gas> gasses, int atmPressure, int depth, SegmentType type) {
+    //return _findGasForSetpoint(gasses[0], 1.2, depth / 1000.0);
     if (gasses == null || gasses.length == 0) return Gas.air;
     Gas ret;
     gasses.forEach((Gas g) {
@@ -565,6 +574,7 @@ class Dive {
       gas = _segments.last.gas;
     } else {
       gas = _findGas(_gasses, _atmPressure, rateMbar > 0 ? toDepth : fromDepth,
+      //gas = _findGas(_gasses, _atmPressure, rateMbar > 0 ? toDepth : ((toDepth + fromDepth)/2).round(),
           rateMbar > 0 ? SegmentType.DOWN : SegmentType.UP);
     }
     for (int i = 0; i < _compartments; i++) {
