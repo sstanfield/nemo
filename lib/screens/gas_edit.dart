@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'widgets/int_edit.dart';
 import 'widgets/common_form_buttons.dart';
-import '../deco/plan.dart';
+import '../deco/dive.dart';
+import '../deco/gas.dart';
 
 class GasEdit extends StatefulWidget {
   final AppBar appBar;

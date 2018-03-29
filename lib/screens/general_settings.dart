@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'widgets/int_edit.dart';
+import 'widgets/double_edit.dart';
 import 'widgets/common_form_buttons.dart';
-import '../deco/plan.dart';
+import '../deco/dive.dart';
 
 class GeneralSettings extends StatefulWidget {
   final AppBar appBar;
@@ -40,7 +41,22 @@ class _GeneralSettingsState extends State<GeneralSettings> {
 
   @override
   Widget build(BuildContext context) {
-    ListView c3 = new ListView(padding: const EdgeInsets.all(8.0), children: [
+    List<Widget> children = [
+      new DropdownButton<String>(
+        value: _dive.isOC()?"Open Circuit":"Closed Circuit",
+        onChanged: (String newValue) {
+          //setState(() {
+            if (newValue == "Open Circuit") _dive.setOC();
+            else _dive.setCCR();
+          //});
+        },
+        items: <String>['Open Circuit', 'Closed Circuit'].map((String value) {
+          return new DropdownMenuItem<String>(
+            value: value,
+            child: new Text(value),
+          );
+        }).toList(),
+      ),
       new IntEdit(initialValue: _dive.gfLo,
           onSaved: (int v) => _dive.gfLo = v,
           validator: (int v) => (v < 0 || v > 100)?"Enter gradiant factor 0-100":null,
@@ -65,8 +81,15 @@ class _GeneralSettingsState extends State<GeneralSettings> {
           onSaved: (int v) => _dive.surfaceInterval = v,
           validator: (int v) => (v < 0 || v > 14400)?"Enter Surface Interval Minutes (0-14,400 (10 days))":null,
           label: "Surface Interval Min"),
-      new CommonButtons(formKey: _formKey, submit: _handleSubmitted),
-    ]);
+    ];
+    if (_dive.isCCR()) {
+      children.add(new DoubleEdit(initialValue: _dive.decoSetpoint,
+          onSaved: (double v) => _dive.decoSetpoint = v,
+          validator: (double v) => (v < .18 || v > 2.0)?"Enter setpoint .18-2.0":null,
+          label: "Deco Setpoint"));
+    }
+    children.add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
+    ListView c3 = new ListView(padding: const EdgeInsets.all(8.0), children: children);
     return new Scaffold(
       key: _scaffoldKey,
       appBar: _appBar,

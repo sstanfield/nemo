@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'widgets/int_edit.dart';
+import 'widgets/double_edit.dart';
 import 'widgets/common_form_buttons.dart';
-import '../deco/plan.dart';
+import '../deco/dive.dart';
+import '../deco/segment.dart';
+import '../deco/segment_type.dart';
 
 class DiveSegment extends StatefulWidget {
   final AppBar appBar;
@@ -26,6 +29,7 @@ class _DiveSegmentState extends State<DiveSegment> {
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
   int _depth;
   int _time;
+  double _setpoint;
 
   void showInSnackBar(String value) {
     _scaffoldKey.currentState
@@ -49,10 +53,10 @@ class _DiveSegmentState extends State<DiveSegment> {
                   ? lastSegment.time
                   : 0);
           if (index == i) {
-            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0, 0.0, 0.0));
+            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0, 0.0, 0.0, _setpoint));
           } else {
             segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
-                    s.gas, false, s.ceiling, s.otu, s.cns));
+                    s.gas, false, s.ceiling, s.otu, s.cns, s.setpoint));
           }
         }
         lastSegment = s;
@@ -61,14 +65,14 @@ class _DiveSegmentState extends State<DiveSegment> {
       _dive.clearSegments();
       lastSegment = null;
       for (Segment s in segments) {
-        _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+        _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time, s.setpoint);
         lastSegment = s;
       }
       if (index == -1) {
         if (_depth == 0 && _dive.segments.length == 0) {
           _dive.surfaceInterval = _time;
         } else {
-          _dive.move(lastSegment == null ? 0 : lastSegment.depth, _depth, _time);
+          _dive.move(lastSegment == null ? 0 : lastSegment.depth, _depth, _time, _setpoint);
         }
       }
       Navigator.of(context).pop();
@@ -98,6 +102,16 @@ class _DiveSegmentState extends State<DiveSegment> {
     return 10;
   }
 
+  static double _getSetpoint(Dive dive, int index) {
+    int i = 0;
+    for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
+      if (index == i)
+        return s.setpoint;
+      i++;
+    }
+    return dive.bottomSetpoint;
+  }
+
   _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling);
 
   @override
@@ -112,6 +126,12 @@ class _DiveSegmentState extends State<DiveSegment> {
         onSaved: (int v) => _time = v,
         validator: (int v) => (v < 0 || v > 1000)?"Enter Time 0-1000":null,
         label: "Time"));
+    if (_dive.isCCR()) {
+      children.add(new DoubleEdit(initialValue: _getSetpoint(_dive, index),
+          onSaved: (double v) => _setpoint = v,
+          validator: (double v) => (v < .18 || v > 2.0)?"Enter setpoint .18-2.0":null,
+          label: "Setpoint"));
+    }
     children.add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
     ListView c3 =
         new ListView(padding: const EdgeInsets.all(8.0), children: children);

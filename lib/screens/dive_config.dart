@@ -3,7 +3,11 @@ import 'general_settings.dart';
 import 'dive_segment.dart';
 import 'gas_edit.dart';
 import 'dive_plan.dart';
+import '../deco/dive.dart';
 import '../deco/plan.dart';
+import '../deco/gas.dart';
+import '../deco/segment.dart';
+import '../deco/segment_type.dart';
 
 class DiveConfig extends StatefulWidget {
   final AppBar _appBar;
@@ -148,7 +152,7 @@ class _DiveConfigState extends State<DiveConfig> {
                   ? lastSegment.time
                   : 0);
           segments.add(new Segment(s.type, dive.mbarToDepth(s.depth), 0.0,
-              tmptime, s.gas, false, s.ceiling, s.otu, s.cns));
+              tmptime, s.gas, false, s.ceiling, s.otu, s.cns, s.setpoint));
         }
       }
       lastSegment = s;
@@ -157,7 +161,7 @@ class _DiveConfigState extends State<DiveConfig> {
     dive.clearSegments();
     lastSegment = null;
     for (Segment s in segments) {
-      dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time);
+      dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time, s.setpoint);
       lastSegment = s;
     }
   }

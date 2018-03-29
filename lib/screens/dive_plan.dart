@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../deco/plan.dart';
+import '../deco/segment_type.dart';
 
 class DivePlan extends StatelessWidget {
   final Plan _plan;
