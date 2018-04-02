@@ -30,9 +30,7 @@ class Dive {
   double _gfLo = .5;
   double _gfHi = .8;
   DiveType _type = DiveType.OC;
-  double _descentSetpoint = 1.0;
-  double _bottomSetpoint = 1.0;
-  double _decoSetpoint = 1.3;
+  double decoSetpoint = 1.3;
   double _gfSlope; // null
   int _ascentRate = 1000; // mbar/min
   int _descentRate = 1800; // mbar/min
@@ -63,15 +61,13 @@ class Dive {
     return null;
   }
 
-  Dive.fromJson(String json) {
-    Map<String, Object> map = JSON.decode(json);
+  Dive.fromJson(String jsonStr) {
+    Map<String, Object> map = json.decode(jsonStr);
     _lastStop = map.containsKey("_lastStop")?map["_lastStop"]:_depthMMToMbar(3000);
     _stopSize = map.containsKey("_stopSize")?map["_stopSize"]:_rateMMToMbar(3000);
     _gfLo = map["_gfLo"];
     _gfHi = map["_gfHi"];
-    if (map.containsKey("_descentSetpoint")) _descentSetpoint = map["_descentSetpoint"];
-    if (map.containsKey("_bottomSetpoint")) _bottomSetpoint = map["_bottomSetpoint"];
-    if (map.containsKey("_decoSetpoint")) _decoSetpoint = map["_decoSetpoint"];
+    if (map.containsKey("_decoSetpoint")) decoSetpoint = map["_decoSetpoint"];
     _ascentRate = map["_ascentRate"];
     _descentRate = map["_descentRate"];
     _lastDepth = map["_lastDepth"];
@@ -94,15 +90,13 @@ class Dive {
     _reset();
   }
 
-  void loadJson(String json) {
-    Map<String, Object> map = JSON.decode(json);
+  void loadJson(String jsonStr) {
+    Map<String, Object> map = json.decode(jsonStr);
     _lastStop = map.containsKey("_lastStop")?map["_lastStop"]:_depthMMToMbar(3000);
     _stopSize = map.containsKey("_stopSize")?map["_stopSize"]:_rateMMToMbar(3000);
     _gfLo = map["_gfLo"];
     _gfHi = map["_gfHi"];
-    if (map.containsKey("_descentSetpoint")) _descentSetpoint = map["_descentSetpoint"];
-    if (map.containsKey("_bottomSetpoint")) _bottomSetpoint = map["_bottomSetpoint"];
-    if (map.containsKey("_decoSetpoint")) _decoSetpoint = map["_decoSetpoint"];
+    if (map.containsKey("_decoSetpoint")) decoSetpoint = map["_decoSetpoint"];
     _ascentRate = map["_ascentRate"];
     _descentRate = map["_descentRate"];
     _lastDepth = map["_lastDepth"];
@@ -130,9 +124,7 @@ class Dive {
     var m = new Map<String, Object>();
     m["_gfLo"] = _gfLo;
     m["_gfHi"] = _gfHi;
-    m["_descentSetpoint"] = _descentSetpoint;
-    m["_bottomSetpoint"] = _bottomSetpoint;
-    m["_decoSetpoint"] = _decoSetpoint;
+    m["_decoSetpoint"] = decoSetpoint;
     m["_ascentRate"] = _ascentRate;
     m["_descentRate"] = _descentRate;
     m["_lastDepth"] = _lastDepth;
@@ -144,7 +136,7 @@ class Dive {
     m["_segments"] = _segments;
     m["_gasses"] = _gasses;
     m["_type"] = _type.toString();
-    return JSON.encode(m);
+    return json.encode(m);
   }
 
   int _rateMMToMbar(int rate) {
@@ -450,9 +442,7 @@ class Dive {
     _gfLo = .5;
     _gfHi = .8;
     _type = DiveType.OC;
-    _descentSetpoint = 1.0;
-    _bottomSetpoint = 1.0;
-    _decoSetpoint = 1.3;
+    decoSetpoint = 1.3;
     _ascentRate = 1000; // mbar/min
     _descentRate = 1800; // mbar/min
     _lastDepth = 0;
@@ -475,13 +465,6 @@ class Dive {
   setCCR() => _type = DiveType.CCR;
   bool isOC() => _type == DiveType.OC;
   bool isCCR() => _type == DiveType.CCR;
-
-  double get descentSetpoint => _descentSetpoint;
-  set descentSetpoint(double setpoint) => _descentSetpoint = setpoint;
-  double get bottomSetpoint => _bottomSetpoint;
-  set bottomSetpoint(double setpoint) => _bottomSetpoint = setpoint;
-  double get decoSetpoint => _decoSetpoint;
-  set decoSetpoint(double setpoint) => _decoSetpoint = setpoint;
 
   int get ascentMM => _mbarToRateMM(_ascentRate);
   set ascentMM(int mm) => _ascentRate = _rateMMToMbar(mm);
