@@ -26,8 +26,8 @@ class Gas implements Comparable<Gas> {
   Gas.bottom(double fO2, double fHe, double ppo2)
       : this(fO2, fHe, ppo2, .18, true, true);
 
-  factory Gas.fromJson(String json) {
-    Map<String, Object> m = JSON.decode(json);
+  factory Gas.fromJson(String jsonStr) {
+    Map<String, Object> m = json.decode(jsonStr);
     double fO2 = m["fO2"];
     double fHe = m["fHe"];
     double minPPO2 = m["minPPO2"];
@@ -45,7 +45,7 @@ class Gas implements Comparable<Gas> {
     m["ppo2"] = ppo2;
     m["useAscent"] = useAscent;
     m["useDescent"] = useDescent;
-    return JSON.encode(m);
+    return json.encode(m);
   }
 
   bool use(int depth, SegmentType type) {

@@ -10,8 +10,8 @@ class Plan {
     _dives.add(new Dive());
   }
 
-  Plan.fromJson(String json) {
-    Map<String, Object> map = JSON.decode(json);
+  Plan.fromJson(String jsonStr) {
+    Map<String, Object> map = json.decode(jsonStr);
     metric = map["_metric"];
     if (map.containsKey("_dives")) {
       for (String str in map["_dives"]) {
@@ -21,8 +21,8 @@ class Plan {
     calcDeco();
   }
 
-  void loadJson(String json) {
-    Map<String, Object> map = JSON.decode(json);
+  void loadJson(String jsonStr) {
+    Map<String, Object> map = json.decode(jsonStr);
     metric = map["_metric"];
     if (map.containsKey("_dives")) {
       _dives.clear();
@@ -37,7 +37,7 @@ class Plan {
     var m = new Map<String, Object>();
     m["_metric"] = _metric;
     m["_dives"] = _dives;
-    return JSON.encode(m);
+    return json.encode(m);
   }
 
   bool get metric => _metric;

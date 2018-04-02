@@ -27,8 +27,8 @@ class Segment {
     return null;
   }
 
-  factory Segment.fromJson(String json) {
-    Map<String, Object> map = JSON.decode(json);
+  factory Segment.fromJson(String jsonStr) {
+    Map<String, Object> map = json.decode(jsonStr);
     SegmentType type = segmentFromString(map["type"]);
     int depth = map["depth"];
     double rawTime = map["rawTime"];
@@ -63,7 +63,7 @@ class Segment {
     m["otu"] = otu;
     m["cns"] = cns;
     m["setpoint"] = setpoint;
-    return JSON.encode(m);
+    return json.encode(m);
   }
 }
 
