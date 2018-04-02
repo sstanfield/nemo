@@ -5,6 +5,7 @@ import 'dive_consts.dart';
 import 'gas.dart';
 import 'segment_type.dart';
 import 'segment.dart';
+import 'otu_cns.dart';
 
 enum DiveType {OC, CCR, SCR}
 
@@ -25,11 +26,6 @@ class Dive {
   final List<double> _tH = new List<double>(_compartments);
   final List<double> _initialN = new List<double>(_compartments);
   final List<double> _initialH = new List<double>(_compartments);
-  static final int _cnsPPO2Segments = 7;
-  final List<double> _cnsPPO2Lo = [.5, .6, .7, .8, .9, 1.1, 1.5];
-  final List<double> _cnsPPO2Hi = [.6, .7, .8, .9, 1.1, 1.5, 100.0];
-  final List<double> _cnsLimitSlope = [-1800.0, -1500.0, -1200.0, -900.0, -600.0, -300.0, -750.0];
-  final List<double> _cnsLimitIntercept = [1800.0, 1620.0, 1410.0, 1170.0, 900.0, 570.0, 1245.0];
   bool _clearInitial = true;
   double _gfLo = .5;
   double _gfHi = .8;
@@ -249,83 +245,6 @@ class Dive {
     }
   }
 
-  /// Algorithm initially from paper:
-  /// Oxygen Toxicity Calculations by Erik C. Baker, P.E.
-  /// Link as of writing at: https://www.shearwater.com/wp-content/uploads/2012/08/Oxygen_Toxicity_Calculations.pdf
-  /// Calculates otu and cns for a bottom segment.
-  List<double> _bottomOtuCns(int depth, double time, Gas gas) {
-    double po2 = gas.fO2 * (depth / 1000.0);
-    double otu = po2<=.5? 0.0:time*pow((0.5/(po2 - 0.5)), ( - 5.0/6.0));
-    double cns = 0.0;
-    double tlim = 0.0;
-    if (po2 > _cnsPPO2Lo[0]) {
-      for (int x = 0; x < _cnsPPO2Segments; x++) {
-        if (po2 > _cnsPPO2Lo[x] && po2 <= _cnsPPO2Hi[x])
-          tlim = _cnsLimitSlope[x] * po2 + _cnsLimitIntercept[x];
-      }
-      cns = tlim>0.0?time/tlim:0.0;
-    }
-    //print("tlim: $tlim, time: $time, ppo2: ${gas.fO2}, depth: $depth, po2: $po2, otu: $otu, cns: $cns");
-    return [otu, cns*100.0];
-  }
-
-  /// Algorithm initially from paper:
-  /// Oxygen Toxicity Calculations by Erik C. Baker, P.E.
-  /// Link as of writing at: https://www.shearwater.com/wp-content/uploads/2012/08/Oxygen_Toxicity_Calculations.pdf
-  /// Calculates otu and cns for an ascent/descent segment.
-  List<double> _descentOtuCns(int rateMbar, int fromDepth, int toDepth, Gas gas) {
-    double time = (toDepth - fromDepth) / rateMbar;
-    double maxata = max(toDepth, fromDepth) / 1000.0;
-    double minata = min(toDepth, fromDepth) / 1000.0;
-    double maxpo2 = gas.fO2 * maxata;
-    double minpo2 = gas.fO2 * minata;
-    double otu = 0.0;
-    double cns = 0.0;
-    if (maxpo2 > .5) {
-      double lowpo2 = (minpo2 < .5)? .5:minpo2;
-      time = time * (maxpo2 - lowpo2)/(maxpo2 - minpo2);
-      otu = 3.0 / 11.0 * time / (maxpo2 - lowpo2) *
-          pow(((maxpo2 - 0.5) / 0.5), (11.0 / 6.0)) -
-          pow(((lowpo2 - 0.5) / 0.5), (11.0 / 6.0));
-      List<double> otime = new List<double>(_cnsPPO2Segments);
-      List<double> po2o = new List<double>(_cnsPPO2Segments);
-      List<double> po2f = new List<double>(_cnsPPO2Segments);
-      List<double> segpo2 = new List<double>(_cnsPPO2Segments);
-      bool up = fromDepth > toDepth;
-      for (int i = 0; i < _cnsPPO2Segments; i++) {
-        if (maxpo2 > _cnsPPO2Lo[i] && lowpo2 <= _cnsPPO2Hi[i]) {
-          if ((maxpo2 >= _cnsPPO2Hi[i]) && (lowpo2 < _cnsPPO2Lo[i])) {
-            po2o[i] = up?_cnsPPO2Hi[i]:_cnsPPO2Lo[i];
-            po2f[i] = !up?_cnsPPO2Hi[i]:_cnsPPO2Lo[i];
-          } else if ((maxpo2 < _cnsPPO2Hi[i]) && (lowpo2 <= _cnsPPO2Lo[i])) {
-            po2o[i] = up?maxpo2:_cnsPPO2Lo[i];
-            po2f[i] = !up?maxpo2:_cnsPPO2Lo[i];
-          } else if ((lowpo2 > _cnsPPO2Lo[i]) && (maxpo2 >= _cnsPPO2Hi[i])) {
-            po2o[i] = up?_cnsPPO2Hi[i]:lowpo2;
-            po2f[i] = !up?_cnsPPO2Hi[i]:lowpo2;
-          } else {
-            po2o[i] = up?maxpo2:lowpo2;
-            po2f[i] = !up?maxpo2:lowpo2;
-          }
-          segpo2[i] = po2f[i] - po2o[i];
-          otime[i] = time*(segpo2[i]/(maxpo2 - lowpo2)).abs();
-          //print("XXXX from: $fromDepth, to: $toDepth, time: $time, otime: ${otime[i]}");
-        } else {
-          otime[i] = po2o[i] = po2f[i] = segpo2[i] = 0.0;
-        }
-      }
-      for (int i = 0; i < _cnsPPO2Segments; i++) {
-        if (otime[i] > 0.0) {
-          double tlimi = _cnsLimitSlope[i] * po2o[i] + _cnsLimitIntercept[i];
-          double mk = _cnsLimitSlope[i] * (segpo2[i] / otime[i]);
-          cns += 1.0 / mk * (log((tlimi + mk * otime[i]).abs()) - log(tlimi.abs()));
-        }
-      }
-    }
-
-    return [otu, cns*100.0];
-  }
-
   void _descend(int rateMbar, int fromDepth, int toDepth, bool calculated, double setpoint) {
     double t = (toDepth - fromDepth) / rateMbar;
     double bar = fromDepth / 1000.0;
@@ -354,7 +273,7 @@ class Dive {
       _tH[i] = pio + R * (t - (1 / k)) - (pio - po - (R / k)) * exp(-k * t);
     }
 
-    List<double> otuCns = _descentOtuCns(rateMbar, fromDepth, toDepth, gas);
+    List<double> otuCns = OtuCns.descent(rateMbar, fromDepth, toDepth, gas);
 
     if (rateMbar > 0) {
       _segments.add(new Segment(
@@ -405,7 +324,7 @@ class Dive {
   void _bottom(int depth, double time, setpoint) {
     Gas gas = _findGas(_gasses, depth, SegmentType.LEVEL, setpoint);
     _bottomInt(depth, time, gas);
-    List<double> otuCns = _bottomOtuCns(depth, time, gas);
+    List<double> otuCns = OtuCns.bottom(depth, time, gas);
     _segments.add(new Segment(SegmentType.LEVEL, depth, time, time.ceil(), gas,
         false, _calcCeiling(_gfLo), otuCns[0], otuCns[1], setpoint));
   }
@@ -477,7 +396,7 @@ class Dive {
           done = true;
         }
       }
-      List<double> otuCns = _bottomOtuCns(fs, t, gas);
+      List<double> otuCns = OtuCns.bottom(fs, t, gas);
       Segment lastSeg = _segments.removeLast();
       if (lastSeg.type != SegmentType.LEVEL) {
         if (lastSeg.rawTime < 1.0) {
@@ -488,12 +407,12 @@ class Dive {
           if (lastSeg.time > lastSeg.rawTime) {
             _bottomInt(
                 lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
-            List<double> otuCns2 = _bottomOtuCns(lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
+            List<double> otuCns2 = OtuCns.bottom(lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
             lastSeg = new Segment(lastSeg.type, lastSeg.depth, lastSeg.rawTime,
                 lastSeg.time, lastSeg.gas, lastSeg.isCalculated, lastSeg.ceiling,
                 lastSeg.otu + otuCns2[0], lastSeg.cns + otuCns2[1], lastSeg.setpoint);
           } else {
-            List<double> otuCns2 = _bottomOtuCns(fs, lastSeg.rawTime - lastSeg.time, lastSeg.gas);
+            List<double> otuCns2 = OtuCns.bottom(fs, lastSeg.rawTime - lastSeg.time, lastSeg.gas);
             otuCns[0] += otuCns2[0];
             otuCns[1] += otuCns2[1];
             t += lastSeg.rawTime - lastSeg.time;
