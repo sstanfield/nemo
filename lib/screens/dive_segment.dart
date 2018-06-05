@@ -109,7 +109,7 @@ class _DiveSegmentState extends State<DiveSegment> {
         return s.setpoint;
       i++;
     }
-    return dive.bottomSetpoint;
+    return 1.0;
   }
 
   _DiveSegmentState(this._appBar, this._dive, this.index, this.ceiling);
