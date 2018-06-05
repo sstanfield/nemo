@@ -48,7 +48,6 @@ class Dive {
   final List<double> _n2Bs = n2Bs;
 
   final List<Gas> _gasses = new List<Gas>();
-  Gas _dil = Gas.air;
   List<Segment> _segments = new List<Segment>();
   int _surfaceInterval = 0;
 
@@ -183,7 +182,15 @@ class Dive {
   }
 
   Gas _findGas(List<Gas> gasses, int depth, SegmentType type, double setpoint) {
-    if (_type == DiveType.CCR) return _findGasForSetpoint(_dil, setpoint, depth / 1000.0);
+    if (_type == DiveType.CCR) {
+      Gas dil = Gas.air;
+      if (gasses != null && gasses.length > 0) {
+        gasses.forEach((Gas g) {
+          if (g.useDiluent) dil = g;
+        });
+      }
+      return _findGasForSetpoint(dil, setpoint, depth / 1000.0);
+    }
     return _findOCGas(gasses, _atmPressure, depth, type);
   }
 
@@ -450,7 +457,6 @@ class Dive {
     _lastStop = _depthMMToMbar(_metric?3000:3048);
     _stopSize = _rateMMToMbar(_metric?3000:3048);
     _gasses.clear();
-    _dil = Gas.air;
     _segments.clear();
     _clearInitial = true;
     _reset();
@@ -554,21 +560,14 @@ class Dive {
   List<Gas> get gasses => _gasses == null ? null : new List.unmodifiable(_gasses..sort());
   void addGas(Gas gas) {
     _gasses?.add(gas);
-    _dil = _gasses[0];
   }
 
   void removeGas(Gas gas) {
     _gasses?.remove(gas);
-    if (_gasses.length == 0) {
-      _dil = Gas.air;
-    } else {
-      _dil = _gasses[0];
-    }
   }
 
   void addAllGasses(List<Gas> g) {
     _gasses?.addAll(g);
-    _dil = _gasses[0];
   }
 }
 

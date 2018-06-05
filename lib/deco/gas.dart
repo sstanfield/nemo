@@ -12,19 +12,22 @@ class Gas implements Comparable<Gas> {
   final int _maxDepth; // in mbar MINUS atm pressure
   final bool useAscent;
   final bool useDescent;
+  final bool useDiluent;
   static final Gas air = new Gas.bottom(.21, 0.0, 1.4);
 
   int get minDepth => (_minDepth / 100).round();
   int get maxDepth => (_maxDepth / 100).round();
 
   Gas(this.fO2, this.fHe, this.ppo2, this.minPPO2, this.useAscent,
-      this.useDescent)
+      this.useDescent, this.useDiluent)
       : fN2 = 1.0 - (fO2 + fHe),
         _minDepth = (fO2 >= .18 ? 0 : ((minPPO2 / fO2) * 1000).ceil() - 1000),
         _maxDepth = ((ppo2 / fO2) * 1000).floor() - 1000;
-  Gas.deco(double fO2, double fHe) : this(fO2, fHe, 1.61, .21, true, false);
+  Gas.deco(double fO2, double fHe) : this(fO2, fHe, 1.61, .21, true, false, false);
   Gas.bottom(double fO2, double fHe, double ppo2)
-      : this(fO2, fHe, ppo2, .18, true, true);
+      : this(fO2, fHe, ppo2, .18, true, true, false);
+  Gas.diluent(double fO2, double fHe)
+      : this(fO2, fHe, 1.61, .18, false, false, true);
 
   factory Gas.fromJson(String jsonStr) {
     Map<String, Object> m = json.decode(jsonStr);
@@ -34,7 +37,8 @@ class Gas implements Comparable<Gas> {
     double ppo2 = m["ppo2"];
     bool useAscent = m["useAscent"];
     bool useDescent = m["useDescent"];
-    return new Gas(fO2, fHe, ppo2, minPPO2, useAscent, useDescent);
+    bool useDiluent = m.containsKey("useDiluent")?m["useDiluent"]:false;
+    return new Gas(fO2, fHe, ppo2, minPPO2, useAscent, useDescent, useDiluent);
   }
 
   String toJson() {
@@ -45,6 +49,7 @@ class Gas implements Comparable<Gas> {
     m["ppo2"] = ppo2;
     m["useAscent"] = useAscent;
     m["useDescent"] = useDescent;
+    m["useDiluent"] = useDiluent;
     return json.encode(m);
   }
 

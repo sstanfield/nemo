@@ -111,8 +111,17 @@ class _DiveConfigState extends State<DiveConfig> {
   }
 
   Widget _gasWidget(Dive dive, Gas g, bool allowDelete) {
+    String gasType = "";
+    if (dive.isCCR()) {
+      if (g.useDiluent) gasType = "Diluent";
+      else if (g.useAscent && !g.useDescent) gasType = "Deco BO";
+      else gasType = "Bailout";
+    } else {
+      if (g.useAscent && !g.useDescent) gasType = "Deco";
+      if (g.useAscent && g.useDescent) gasType = "Bottom";
+    }
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
-      new Expanded(child: new Text("$g")),
+      new Expanded(child: new Text("$g $gasType")),
       new IconButton(
         icon: new Icon(Icons.edit),
         tooltip: 'Edit Gas',
