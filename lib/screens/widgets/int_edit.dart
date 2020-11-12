@@ -20,10 +20,10 @@ class IntEdit extends StatelessWidget {
   Widget build(BuildContext context) {
     return new Padding(
         padding: new EdgeInsets.symmetric(horizontal: padding),
-        child:
-        new TextFormField(
+        child: new TextFormField(
             initialValue: "$initialValue",
-            onSaved: (String val) => onSaved(val.length == 0 ? 0 : int.parse(val)),
+            onSaved: (String val) =>
+                onSaved(val.length == 0 ? 0 : int.parse(val)),
             validator: (String val) {
               int i = -1;
               if (val.length == 0)

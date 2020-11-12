@@ -7,7 +7,7 @@ import 'segment_type.dart';
 import 'segment.dart';
 import 'otu_cns.dart';
 
-enum DiveType {OC, CCR, SCR}
+enum DiveType { OC, CCR, SCR }
 
 /*
 
@@ -62,8 +62,10 @@ class Dive {
 
   Dive.fromJson(String jsonStr) {
     Map<String, Object> map = json.decode(jsonStr);
-    _lastStop = map.containsKey("_lastStop")?map["_lastStop"]:_depthMMToMbar(3000);
-    _stopSize = map.containsKey("_stopSize")?map["_stopSize"]:_rateMMToMbar(3000);
+    _lastStop =
+        map.containsKey("_lastStop") ? map["_lastStop"] : _depthMMToMbar(3000);
+    _stopSize =
+        map.containsKey("_stopSize") ? map["_stopSize"] : _rateMMToMbar(3000);
     _gfLo = map["_gfLo"];
     _gfHi = map["_gfHi"];
     if (map.containsKey("_decoSetpoint")) decoSetpoint = map["_decoSetpoint"];
@@ -72,7 +74,8 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
-    _surfaceInterval = map.containsKey("_surfaceInterval")?map["_surfaceInterval"]:0;
+    _surfaceInterval =
+        map.containsKey("_surfaceInterval") ? map["_surfaceInterval"] : 0;
     _type = typeFromString(map["_type"]);
     if (_type == null) _type = DiveType.OC;
     if (map.containsKey("_gasses")) {
@@ -91,8 +94,10 @@ class Dive {
 
   void loadJson(String jsonStr) {
     Map<String, Object> map = json.decode(jsonStr);
-    _lastStop = map.containsKey("_lastStop")?map["_lastStop"]:_depthMMToMbar(3000);
-    _stopSize = map.containsKey("_stopSize")?map["_stopSize"]:_rateMMToMbar(3000);
+    _lastStop =
+        map.containsKey("_lastStop") ? map["_lastStop"] : _depthMMToMbar(3000);
+    _stopSize =
+        map.containsKey("_stopSize") ? map["_stopSize"] : _rateMMToMbar(3000);
     _gfLo = map["_gfLo"];
     _gfHi = map["_gfHi"];
     if (map.containsKey("_decoSetpoint")) decoSetpoint = map["_decoSetpoint"];
@@ -101,7 +106,8 @@ class Dive {
     _lastDepth = map["_lastDepth"];
     _atmPressure = map["_atmPressure"];
     metric = map["_metric"];
-    _surfaceInterval = map.containsKey("_surfaceInterval")?map["_surfaceInterval"]:0;
+    _surfaceInterval =
+        map.containsKey("_surfaceInterval") ? map["_surfaceInterval"] : 0;
     _type = typeFromString(map["_type"]);
     if (_type == null) _type = DiveType.OC;
     if (map.containsKey("_gasses")) {
@@ -162,7 +168,8 @@ class Dive {
     return new Gas.bottom(o2percent, hePercent, setpoint);
   }
 
-  static Gas _findOCGas(List<Gas> gasses, int atmPressure, int depth, SegmentType type) {
+  static Gas _findOCGas(
+      List<Gas> gasses, int atmPressure, int depth, SegmentType type) {
     //return _findGasForSetpoint(gasses[0], 1.2, depth / 1000.0);
     if (gasses == null || gasses.length == 0) return Gas.air;
     Gas ret;
@@ -222,7 +229,8 @@ class Dive {
     List<Segment> s = _segments;
     _segments = new List<Segment>();
     int tDepth = _atmPressure;
-    if (_surfaceInterval > 0) _bottomInt(_atmPressure, _surfaceInterval.toDouble(), Gas.air);
+    if (_surfaceInterval > 0)
+      _bottomInt(_atmPressure, _surfaceInterval.toDouble(), Gas.air);
     for (final Segment e in s) {
       if (e.type == SegmentType.DOWN) {
         _descend(_descentRate, tDepth, e.depth + atmDelta, false, e.setpoint);
@@ -244,7 +252,8 @@ class Dive {
     }
   }
 
-  void _descend(int rateMbar, int fromDepth, int toDepth, bool calculated, double setpoint) {
+  void _descend(int rateMbar, int fromDepth, int toDepth, bool calculated,
+      double setpoint) {
     double t = (toDepth - fromDepth) / rateMbar;
     double bar = fromDepth / 1000.0;
     double brate = rateMbar / 1000.0; // rate of decent in bar
@@ -254,9 +263,12 @@ class Dive {
         _segments.last.type == SegmentType.UP) {
       gas = _segments.last.gas;
     } else {
-      gas = _findGas(_gasses, rateMbar > 0 ? toDepth : fromDepth,
-      //gas = _findGas(_gasses, _atmPressure, rateMbar > 0 ? toDepth : ((toDepth + fromDepth)/2).round(),
-          rateMbar > 0 ? SegmentType.DOWN : SegmentType.UP, setpoint);
+      gas = _findGas(
+          _gasses,
+          rateMbar > 0 ? toDepth : fromDepth,
+          //gas = _findGas(_gasses, _atmPressure, rateMbar > 0 ? toDepth : ((toDepth + fromDepth)/2).round(),
+          rateMbar > 0 ? SegmentType.DOWN : SegmentType.UP,
+          setpoint);
     }
     for (int i = 0; i < _compartments; i++) {
       double po = _tN[i];
@@ -275,14 +287,8 @@ class Dive {
     List<double> otuCns = OtuCns.descent(rateMbar, fromDepth, toDepth, gas);
 
     if (rateMbar > 0) {
-      _segments.add(new Segment(
-          SegmentType.DOWN,
-          toDepth,
-          t,
-          t.ceil(),
-          gas,
-          calculated,
-          0, otuCns[0], otuCns[1], setpoint));
+      _segments.add(new Segment(SegmentType.DOWN, toDepth, t, t.ceil(), gas,
+          calculated, 0, otuCns[0], otuCns[1], setpoint));
     } else {
       if (_segments.length > 0) {
         Segment lastSeg = _segments.removeLast();
@@ -294,13 +300,13 @@ class Dive {
           _segments.add(lastSeg);
         }
       }
-      _segments.add(new Segment(
-          SegmentType.UP, toDepth, t, t.round(), gas, calculated, 0, otuCns[0], otuCns[1], setpoint));
+      _segments.add(new Segment(SegmentType.UP, toDepth, t, t.round(), gas,
+          calculated, 0, otuCns[0], otuCns[1], setpoint));
     }
-
   }
 
-  void _ascend(int rateMbar, int fromDepth, int toDepth, bool calculated, setpoint) {
+  void _ascend(
+      int rateMbar, int fromDepth, int toDepth, bool calculated, setpoint) {
     _descend(-rateMbar, fromDepth, toDepth, calculated, setpoint);
   }
 
@@ -406,12 +412,22 @@ class Dive {
           if (lastSeg.time > lastSeg.rawTime) {
             _bottomInt(
                 lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
-            List<double> otuCns2 = OtuCns.bottom(lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
-            lastSeg = new Segment(lastSeg.type, lastSeg.depth, lastSeg.rawTime,
-                lastSeg.time, lastSeg.gas, lastSeg.isCalculated, lastSeg.ceiling,
-                lastSeg.otu + otuCns2[0], lastSeg.cns + otuCns2[1], lastSeg.setpoint);
+            List<double> otuCns2 = OtuCns.bottom(
+                lastSeg.depth, lastSeg.time - lastSeg.rawTime, lastSeg.gas);
+            lastSeg = new Segment(
+                lastSeg.type,
+                lastSeg.depth,
+                lastSeg.rawTime,
+                lastSeg.time,
+                lastSeg.gas,
+                lastSeg.isCalculated,
+                lastSeg.ceiling,
+                lastSeg.otu + otuCns2[0],
+                lastSeg.cns + otuCns2[1],
+                lastSeg.setpoint);
           } else {
-            List<double> otuCns2 = OtuCns.bottom(fs, lastSeg.rawTime - lastSeg.time, lastSeg.gas);
+            List<double> otuCns2 =
+                OtuCns.bottom(fs, lastSeg.rawTime - lastSeg.time, lastSeg.gas);
             otuCns[0] += otuCns2[0];
             otuCns[1] += otuCns2[1];
             t += lastSeg.rawTime - lastSeg.time;
@@ -420,8 +436,8 @@ class Dive {
         }
       }
       _bottomInt(fs, t.ceil() - t, gas);
-      _segments
-          .add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true, 0, otuCns[0], otuCns[1], decoSetpoint));
+      _segments.add(new Segment(SegmentType.LEVEL, fs, t, t.ceil(), gas, true,
+          0, otuCns[0], otuCns[1], decoSetpoint));
     }
     if (nfs > _atmPressure) _calcDecoInt(ngf);
   }
@@ -434,7 +450,8 @@ class Dive {
   }
 
   void setInitialLoadings(Dive dive) {
-    if (dive == null) _clearInitial = true;
+    if (dive == null)
+      _clearInitial = true;
     else {
       _clearInitial = false;
       for (num i = 0; i < _compartments; i++) {
@@ -454,8 +471,8 @@ class Dive {
     _descentRate = 1800; // mbar/min
     _lastDepth = 0;
     _atmPressure = 1013;
-    _lastStop = _depthMMToMbar(_metric?3000:3048);
-    _stopSize = _rateMMToMbar(_metric?3000:3048);
+    _lastStop = _depthMMToMbar(_metric ? 3000 : 3048);
+    _stopSize = _rateMMToMbar(_metric ? 3000 : 3048);
     _gasses.clear();
     _segments.clear();
     _clearInitial = true;
@@ -481,8 +498,8 @@ class Dive {
   set metric(bool metric) {
     if (metric == _metric) return;
     _metric = metric;
-    _lastStop = _depthMMToMbar(_metric?3000:3048);
-    _stopSize = _rateMMToMbar(_metric?3000:3048);
+    _lastStop = _depthMMToMbar(_metric ? 3000 : 3048);
+    _stopSize = _rateMMToMbar(_metric ? 3000 : 3048);
     _reset();
   }
 
@@ -500,20 +517,20 @@ class Dive {
   set atmPressure(int atmPressure) {
     int oldAtm = _atmPressure;
     _atmPressure = atmPressure;
-    _lastStop = _depthMMToMbar(_metric?3000:3048);
+    _lastStop = _depthMMToMbar(_metric ? 3000 : 3048);
     _reset(atmDelta: atmPressure - oldAtm);
   }
 
   get atmPressure => _atmPressure;
 
   void descend(int fromDepth, int toDepth, double setpoint) {
-    _descend(
-        _descentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false, setpoint);
+    _descend(_descentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false,
+        setpoint);
   }
 
   void ascend(int fromDepth, int toDepth, double setpoint) {
-    _ascend(
-        _ascentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false, setpoint);
+    _ascend(_ascentRate, depthToMbar(fromDepth), depthToMbar(toDepth), false,
+        setpoint);
   }
 
   void addBottom(int depth, int time, double setpoint) {
@@ -534,19 +551,19 @@ class Dive {
   }
 
   int depthToMbar(int depth) {
-    return _depthMMToMbar(_metric?depth*1000:(depth*304.8).round());
+    return _depthMMToMbar(_metric ? depth * 1000 : (depth * 304.8).round());
   }
 
   int rateToMbar(int depth) {
-    return _rateMMToMbar(_metric?depth*1000:(depth*304.8).round());
+    return _rateMMToMbar(_metric ? depth * 1000 : (depth * 304.8).round());
   }
 
   int mbarToDepth(int mbar) {
-    return (_mbarToDepthMM(mbar) / (_metric?1000:304.8)).round();
+    return (_mbarToDepthMM(mbar) / (_metric ? 1000 : 304.8)).round();
   }
 
   int mbarToRate(int mbar) {
-    return (_mbarToRateMM(mbar) / (_metric?1000:304.8)).round();
+    return (_mbarToRateMM(mbar) / (_metric ? 1000 : 304.8)).round();
   }
 
   int get ascentRate => mbarToRate(_ascentRate);
@@ -554,10 +571,10 @@ class Dive {
   set ascentRate(int rate) => _ascentRate = rateToMbar(rate);
   set descentRate(int rate) => _descentRate = rateToMbar(rate);
 
-  List<Segment> get segments =>
-      new List.unmodifiable(_segments);
+  List<Segment> get segments => new List.unmodifiable(_segments);
 
-  List<Gas> get gasses => _gasses == null ? null : new List.unmodifiable(_gasses..sort());
+  List<Gas> get gasses =>
+      _gasses == null ? null : new List.unmodifiable(_gasses..sort());
   void addGas(Gas gas) {
     _gasses?.add(gas);
   }
@@ -570,4 +587,3 @@ class Dive {
     _gasses?.addAll(g);
   }
 }
-

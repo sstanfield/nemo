@@ -47,8 +47,8 @@ class Segment {
     double cns = map["cns"];
     double setpoint = map["setpoint"];
     if (setpoint == null) setpoint = 1.1;
-    return new Segment(type, depth, rawTime, time, gas, isCalculated,
-        ceiling, otu, cns, setpoint);
+    return new Segment(type, depth, rawTime, time, gas, isCalculated, ceiling,
+        otu, cns, setpoint);
   }
 
   String toJson() {
@@ -66,4 +66,3 @@ class Segment {
     return json.encode(m);
   }
 }
-

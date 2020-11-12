@@ -23,7 +23,8 @@ class Gas implements Comparable<Gas> {
       : fN2 = 1.0 - (fO2 + fHe),
         _minDepth = (fO2 >= .18 ? 0 : ((minPPO2 / fO2) * 1000).ceil() - 1000),
         _maxDepth = ((ppo2 / fO2) * 1000).floor() - 1000;
-  Gas.deco(double fO2, double fHe) : this(fO2, fHe, 1.61, .21, true, false, false);
+  Gas.deco(double fO2, double fHe)
+      : this(fO2, fHe, 1.61, .21, true, false, false);
   Gas.bottom(double fO2, double fHe, double ppo2)
       : this(fO2, fHe, ppo2, .18, true, true, false);
   Gas.diluent(double fO2, double fHe)
@@ -37,7 +38,7 @@ class Gas implements Comparable<Gas> {
     double ppo2 = m["ppo2"];
     bool useAscent = m["useAscent"];
     bool useDescent = m["useDescent"];
-    bool useDiluent = m.containsKey("useDiluent")?m["useDiluent"]:false;
+    bool useDiluent = m.containsKey("useDiluent") ? m["useDiluent"] : false;
     return new Gas(fO2, fHe, ppo2, minPPO2, useAscent, useDescent, useDiluent);
   }
 
@@ -63,8 +64,8 @@ class Gas implements Comparable<Gas> {
   }
 
   String toString() {
-    if (fHe > 0) return "${(fO2*100.0).round()}/${(fHe*100.0).round()}";
-    return "${(fO2*100.0).round()}%";
+    if (fHe > 0) return "${(fO2 * 100.0).round()}/${(fHe * 100.0).round()}";
+    return "${(fO2 * 100.0).round()}%";
   }
 
   bool operator ==(o) => o is Gas && o.fO2 == fO2 && o.fHe == fHe;
@@ -78,4 +79,3 @@ class Gas implements Comparable<Gas> {
     return 1;
   }
 }
-

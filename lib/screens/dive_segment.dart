@@ -53,10 +53,11 @@ class _DiveSegmentState extends State<DiveSegment> {
                   ? lastSegment.time
                   : 0);
           if (index == i) {
-            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false, 0, 0.0, 0.0, _setpoint));
+            segments.add(new Segment(s.type, _depth, 0.0, _time, s.gas, false,
+                0, 0.0, 0.0, _setpoint));
           } else {
-            segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0, tmptime,
-                    s.gas, false, s.ceiling, s.otu, s.cns, s.setpoint));
+            segments.add(new Segment(s.type, _dive.mbarToDepth(s.depth), 0.0,
+                tmptime, s.gas, false, s.ceiling, s.otu, s.cns, s.setpoint));
           }
         }
         lastSegment = s;
@@ -65,14 +66,16 @@ class _DiveSegmentState extends State<DiveSegment> {
       _dive.clearSegments();
       lastSegment = null;
       for (Segment s in segments) {
-        _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time, s.setpoint);
+        _dive.move(lastSegment == null ? 0 : lastSegment.depth, s.depth, s.time,
+            s.setpoint);
         lastSegment = s;
       }
       if (index == -1) {
         if (_depth == 0 && _dive.segments.length == 0) {
           _dive.surfaceInterval = _time;
         } else {
-          _dive.move(lastSegment == null ? 0 : lastSegment.depth, _depth, _time, _setpoint);
+          _dive.move(lastSegment == null ? 0 : lastSegment.depth, _depth, _time,
+              _setpoint);
         }
       }
       Navigator.of(context).pop();
@@ -82,8 +85,7 @@ class _DiveSegmentState extends State<DiveSegment> {
   static int _getDepth(Dive dive, int index) {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
-      if (index == i)
-        return dive.mbarToDepth(s.depth);
+      if (index == i) return dive.mbarToDepth(s.depth);
       i++;
     }
     return 30;
@@ -105,8 +107,7 @@ class _DiveSegmentState extends State<DiveSegment> {
   static double _getSetpoint(Dive dive, int index) {
     int i = 0;
     for (final s in dive.segments.where((Segment s) => !s.isCalculated)) {
-      if (index == i)
-        return s.setpoint;
+      if (index == i) return s.setpoint;
       i++;
     }
     return 1.0;
@@ -117,22 +118,29 @@ class _DiveSegmentState extends State<DiveSegment> {
   @override
   Widget build(BuildContext context) {
     List<Widget> children = new List<Widget>();
-    if (ceiling > 0) children.add(new Text("Ceiling: $ceiling${_dive.metric?"M":"ft"}"));
-    children.add(new IntEdit(initialValue: _getDepth(_dive, index),
+    if (ceiling > 0)
+      children.add(new Text("Ceiling: $ceiling${_dive.metric ? "M" : "ft"}"));
+    children.add(new IntEdit(
+        initialValue: _getDepth(_dive, index),
         onSaved: (int v) => _depth = v,
-        validator: (int v) => (v < ceiling || v > 1000)?"Enter Depth $ceiling-1000":null,
+        validator: (int v) =>
+            (v < ceiling || v > 1000) ? "Enter Depth $ceiling-1000" : null,
         label: "Depth"));
-    children.add(new IntEdit(initialValue: _getTime(_dive, index),
+    children.add(new IntEdit(
+        initialValue: _getTime(_dive, index),
         onSaved: (int v) => _time = v,
-        validator: (int v) => (v < 0 || v > 1000)?"Enter Time 0-1000":null,
+        validator: (int v) => (v < 0 || v > 1000) ? "Enter Time 0-1000" : null,
         label: "Time"));
     if (_dive.isCCR()) {
-      children.add(new DoubleEdit(initialValue: _getSetpoint(_dive, index),
+      children.add(new DoubleEdit(
+          initialValue: _getSetpoint(_dive, index),
           onSaved: (double v) => _setpoint = v,
-          validator: (double v) => (v < .18 || v > 2.0)?"Enter setpoint .18-2.0":null,
+          validator: (double v) =>
+              (v < .18 || v > 2.0) ? "Enter setpoint .18-2.0" : null,
           label: "Setpoint"));
     }
-    children.add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
+    children
+        .add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
     ListView c3 =
         new ListView(padding: const EdgeInsets.all(8.0), children: children);
     return new Scaffold(

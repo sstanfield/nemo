@@ -49,7 +49,9 @@ class _GasEditState extends State<GasEdit> {
     } else {
       form.save();
       Gas newGas = !_decoGas
-          ? (_dilGas?new Gas.diluent(_pO2 / 100.0, _pHe / 100.0):new Gas.bottom(_pO2 / 100.0, _pHe / 100.0, 1.4))
+          ? (_dilGas
+              ? new Gas.diluent(_pO2 / 100.0, _pHe / 100.0)
+              : new Gas.bottom(_pO2 / 100.0, _pHe / 100.0, 1.4))
           : new Gas.deco(_pO2 / 100.0, _pHe / 100.0);
       _save(_dive, _gas, newGas);
     }
@@ -65,21 +67,25 @@ class _GasEditState extends State<GasEdit> {
   @override
   Widget build(BuildContext context) {
     List<Widget> children = new List<Widget>();
-    children.add(new IntEdit(initialValue: _pO2,
+    children.add(new IntEdit(
+        initialValue: _pO2,
         onSaved: (int v) => _pO2 = v,
-        validator: (int v) => (v < 0 || v > 100)?"Enter O2 percent 0-100":null,
+        validator: (int v) =>
+            (v < 0 || v > 100) ? "Enter O2 percent 0-100" : null,
         label: "O2 %"));
-    children.add(new IntEdit(initialValue: _pHe,
-          onSaved: (int v) => _pHe = v,
-          validator: (int v) => (v < 0 || v > 100)?"Enter He percent 0-100":null,
-          label: "He %"));
+    children.add(new IntEdit(
+        initialValue: _pHe,
+        onSaved: (int v) => _pHe = v,
+        validator: (int v) =>
+            (v < 0 || v > 100) ? "Enter He percent 0-100" : null,
+        label: "He %"));
     if (_dive.isOC()) {
       children.add(new Row(children: [
         new Checkbox(
             value: _decoGas,
             onChanged: (bool v) => setState(() {
-              _decoGas = v;
-            })),
+                  _decoGas = v;
+                })),
         const Text('Deco Gas')
       ]));
     } else {
@@ -87,41 +93,46 @@ class _GasEditState extends State<GasEdit> {
         new Checkbox(
             value: _dilGas,
             onChanged: (bool v) => setState(() {
-              _dilGas = v;
-              if (v) {
-                _boGas = false;
-                _decoGas = false;
-              } else _boGas = true;
-            })),
+                  _dilGas = v;
+                  if (v) {
+                    _boGas = false;
+                    _decoGas = false;
+                  } else
+                    _boGas = true;
+                })),
         const Text('Diluent Gas')
       ]));
       children.add(new Row(children: [
         new Checkbox(
             value: _boGas,
             onChanged: (bool v) => setState(() {
-              _boGas = v;
-              if (v) {
-                _dilGas = false;
-                _decoGas = false;
-              } else _dilGas = true;
-            })),
+                  _boGas = v;
+                  if (v) {
+                    _dilGas = false;
+                    _decoGas = false;
+                  } else
+                    _dilGas = true;
+                })),
         const Text('Bailout Gas')
       ]));
       children.add(new Row(children: [
         new Checkbox(
             value: _decoGas,
             onChanged: (bool v) => setState(() {
-              _decoGas = v;
-              if (v) {
-                _dilGas = false;
-                _boGas = false;
-              } else _boGas = true;
-            })),
+                  _decoGas = v;
+                  if (v) {
+                    _dilGas = false;
+                    _boGas = false;
+                  } else
+                    _boGas = true;
+                })),
         const Text('Bailout Deco Gas')
       ]));
     }
-    children.add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
-    ListView c3 = new ListView(padding: const EdgeInsets.all(8.0), children: children);
+    children
+        .add(new CommonButtons(formKey: _formKey, submit: _handleSubmitted));
+    ListView c3 =
+        new ListView(padding: const EdgeInsets.all(8.0), children: children);
     return new Scaffold(
       key: _scaffoldKey,
       appBar: _appBar,

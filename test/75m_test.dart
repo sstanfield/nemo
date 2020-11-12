@@ -20,22 +20,38 @@ void main() {
     List<Segment> segs = dive.segments;
     expect(segs.length, 16);
     List<Segment> expectedSegs = new List<Segment>();
-    expectedSegs.add(new Segment(SegmentType.DOWN, 8513, 0.0, 5, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 8513, 0.0, 25, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.UP, 4913, 0.0, 4, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 4913, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 4613, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 4313, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 4013, 0.0, 2, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 3713, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 3413, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 3113, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 2813, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 2513, 0.0, 6, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 2213, 0.0, 8, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 1913, 0.0, 11, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 1613, 0.0, 15, Gas.air, false, 0, 0.0, 0.0, 1.2));
-    expectedSegs.add(new Segment(SegmentType.LEVEL, 1313, 0.0, 28, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.DOWN, 8513, 0.0, 5, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 8513, 0.0, 25, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.UP, 4913, 0.0, 4, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 4913, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 4613, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 4313, 0.0, 1, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 4013, 0.0, 2, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 3713, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 3413, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 3113, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 2813, 0.0, 3, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 2513, 0.0, 6, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 2213, 0.0, 8, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 1913, 0.0, 11, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 1613, 0.0, 15, Gas.air, false, 0, 0.0, 0.0, 1.2));
+    expectedSegs.add(new Segment(
+        SegmentType.LEVEL, 1313, 0.0, 28, Gas.air, false, 0, 0.0, 0.0, 1.2));
     int i = 0;
 //    int runtime = 0;
     for (var s in segs) {

@@ -4,25 +4,36 @@ import '../deco/segment_type.dart';
 
 class DivePlan extends StatelessWidget {
   final Plan _plan;
-  static final headerStyle = const TextStyle(fontWeight: FontWeight.bold, color: Colors.black,);
-  static final diveNameStyle = const TextStyle(fontWeight: FontWeight.bold, color: Colors.black,);
-  static final diveFooterStyle = const TextStyle(fontWeight: FontWeight.bold, color: Colors.black,);
-  static final highPPO2Style = new TextStyle(fontWeight: FontWeight.bold, color: Colors.red);
+  static final headerStyle = const TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+  );
+  static final diveNameStyle = const TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+  );
+  static final diveFooterStyle = const TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+  );
+  static final highPPO2Style =
+      new TextStyle(fontWeight: FontWeight.bold, color: Colors.red);
 
   DivePlan(this._plan);
 
-  void _makeRows(List<Widget> rows, List<List<Widget>> cols, List<bool> showCol, double otu, double cns) {
+  void _makeRows(List<Widget> rows, List<List<Widget>> cols, List<bool> showCol,
+      double otu, double cns) {
     List<Widget> children = new List<Widget>();
     int i = 0;
     for (final col in cols) {
-      if (showCol == null || showCol[i])children.add(new Expanded(child: new Column(children: col)));
+      if (showCol == null || showCol[i])
+        children.add(new Expanded(child: new Column(children: col)));
       i++;
     }
     rows.add(new Row(children: children));
     rows.add(new Text(
         "OTUs: ${otu.toStringAsFixed(2)} CNS: ${cns.toStringAsFixed(2)}%",
-        style: diveFooterStyle
-    ));
+        style: diveFooterStyle));
   }
 
   @override
@@ -45,7 +56,8 @@ class DivePlan extends StatelessWidget {
       diveNum++;
       runtime = 0;
       if (diveNum > 1) {
-        _makeRows(rows, [col1, col2, col3, col4, col5, col6, colOtu, colCns], null, otu, cns);
+        _makeRows(rows, [col1, col2, col3, col4, col5, col6, colOtu, colCns],
+            null, otu, cns);
         otu = 0.0;
         cns = 0.0;
         col1 = new List<Widget>();
@@ -65,26 +77,32 @@ class DivePlan extends StatelessWidget {
       col6.add(new Text("PPO2", style: headerStyle));
       colOtu.add(new Text("OTU", style: headerStyle));
       colCns.add(new Text("CNS", style: headerStyle));
-      if (diveNum > 1) rows.add(new Divider(height: 24.0,));
+      if (diveNum > 1)
+        rows.add(new Divider(
+          height: 24.0,
+        ));
       rows.add(new Text(
-          "Dive #$diveNum ${dive.surfaceInterval>0?" Surface Interval ${dive.surfaceInterval} minutes":""}",
-          style: diveNameStyle
-      ));
+          "Dive #$diveNum ${dive.surfaceInterval > 0 ? " Surface Interval ${dive.surfaceInterval} minutes" : ""}",
+          style: diveNameStyle));
       for (final e in dive.segments) {
         if (e.type == SegmentType.DOWN) col1.add(new Text("DESC"));
         if (e.type == SegmentType.UP) col1.add(new Text("ASC"));
         if (e.type == SegmentType.LEVEL) {
-          if (e.isCalculated) col1.add(new Text("DECO"));
-          else col1.add(new Text("BTM"));
+          if (e.isCalculated)
+            col1.add(new Text("DECO"));
+          else
+            col1.add(new Text("BTM"));
         }
-        col2.add(new Text("${dive.mbarToDepth(e.depth)}${dive.metric?"M":"ft"}"));
+        col2.add(new Text(
+            "${dive.mbarToDepth(e.depth)}${dive.metric ? "M" : "ft"}"));
         col3.add(new Text("${e.time}"));
         runtime += e.time;
         col4.add(new Text("$runtime"));
         col5.add(new Text("${e.gas}"));
         double ppo2 = e.gas.fO2 * ((e.depth / 1000));
         if (ppo2 > e.gas.ppo2)
-          col6.add(new Text("${ppo2.toStringAsFixed(2)}", style: highPPO2Style));
+          col6.add(
+              new Text("${ppo2.toStringAsFixed(2)}", style: highPPO2Style));
         else
           col6.add(new Text("${ppo2.toStringAsFixed(2)}"));
         colOtu.add(new Text("${e.otu.toStringAsFixed(2)}"));
@@ -93,7 +111,8 @@ class DivePlan extends StatelessWidget {
         cns += e.cns;
       }
     }
-    _makeRows(rows, [col1, col2, col3, col4, col5, col6, colOtu, colCns], null, otu, cns);
+    _makeRows(rows, [col1, col2, col3, col4, col5, col6, colOtu, colCns], null,
+        otu, cns);
     return new Column(children: rows);
   }
 }

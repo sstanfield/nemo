@@ -20,10 +20,10 @@ class DoubleEdit extends StatelessWidget {
   Widget build(BuildContext context) {
     return new Padding(
         padding: new EdgeInsets.symmetric(horizontal: padding),
-        child:
-        new TextFormField(
+        child: new TextFormField(
             initialValue: "$initialValue",
-            onSaved: (String val) => onSaved(val.length == 0 ? 0 : double.parse(val)),
+            onSaved: (String val) =>
+                onSaved(val.length == 0 ? 0 : double.parse(val)),
             validator: (String val) {
               double i = -1.0;
               if (val.length == 0)
