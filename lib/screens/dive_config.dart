@@ -85,34 +85,42 @@ class _DiveConfigState extends State<DiveConfig> {
   }
 
   Widget _diveSettingWidget(Dive dive, bool allowDelete, int idx) {
+    var pressed = () {
+      Navigator.of(context)
+          .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
+        return new GeneralSettings(appBar: _appBar, dive: dive);
+      }));
+    };
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
           child: new Text(
               "Dive $idx ${dive.gfLo.toString()}/${dive.gfHi.toString()}")),
-      new IconButton(
-        icon: new Icon(Icons.edit),
-        tooltip: 'Edit Dive Settings',
-        onPressed: () {
-          Navigator.of(context).push(
-              new MaterialPageRoute<Null>(builder: (BuildContext context) {
-            return new GeneralSettings(appBar: _appBar, dive: dive);
-          }));
-        },
-      ),
     ]);
     Widget ret;
     if (allowDelete)
-      ret = new Chip(
+      ret = new RawChip(
         label: label,
+        tooltip: 'Edit Dive Settings',
+        onPressed: pressed,
         onDeleted: () => setState(() => _removeDive(idx)),
       );
     else
-      ret = new Chip(label: label);
+      ret = new RawChip(
+        label: label,
+        tooltip: 'Edit Dive Settings',
+        onPressed: pressed,
+      );
     return ret;
   }
 
   Widget _gasWidget(Dive dive, Gas g, bool allowDelete) {
     String gasType = "";
+    var pressed = () {
+      Navigator.of(context)
+          .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
+        return new GasEdit(appBar: _appBar, gas: g, dive: dive, save: _saveGas);
+      }));
+    };
     if (dive.isCCR()) {
       if (g.useDiluent)
         gasType = "Diluent";
@@ -126,26 +134,19 @@ class _DiveConfigState extends State<DiveConfig> {
     }
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(child: new Text("$g $gasType")),
-      new IconButton(
-        icon: new Icon(Icons.edit),
-        tooltip: 'Edit Gas',
-        onPressed: () {
-          Navigator.of(context).push(
-              new MaterialPageRoute<Null>(builder: (BuildContext context) {
-            return new GasEdit(
-                appBar: _appBar, gas: g, dive: dive, save: _saveGas);
-          }));
-        },
-      ),
     ]);
     Widget ret;
     if (allowDelete)
-      ret = new Chip(
+      ret = new RawChip(
         label: label,
+        onPressed: pressed,
         onDeleted: () => setState(() => dive.removeGas(g)),
       );
     else
-      ret = new Chip(label: label);
+      ret = new RawChip(
+        label: label,
+        onPressed: pressed,
+      );
     return ret;
   }
 
@@ -182,29 +183,29 @@ class _DiveConfigState extends State<DiveConfig> {
 
   Widget _segmentWidget(
       Dive dive, int depth, int time, bool allowDelete, int idx, int ceiling) {
+    var pressed = () {
+      Navigator.of(context)
+          .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
+        return new DiveSegment(
+            appBar: _appBar, dive: dive, index: idx, ceiling: ceiling);
+      }));
+    };
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
           child: new Text("$depth${dive.metric ? "M" : "ft"}, $time min")),
-      new IconButton(
-        icon: new Icon(Icons.edit),
-        tooltip: 'Edit Segment',
-        onPressed: () {
-          Navigator.of(context).push(
-              new MaterialPageRoute<Null>(builder: (BuildContext context) {
-            return new DiveSegment(
-                appBar: _appBar, dive: dive, index: idx, ceiling: ceiling);
-          }));
-        },
-      ),
     ]);
     Widget ret;
     if (allowDelete)
-      ret = new Chip(
+      ret = new RawChip(
         label: label,
+        onPressed: pressed,
         onDeleted: () => setState(() => _removeSegment(dive, idx)),
       );
     else
-      ret = new Chip(label: label);
+      ret = new RawChip(
+        label: label,
+        onPressed: pressed,
+      );
     return ret;
   }
 
