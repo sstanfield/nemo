@@ -3,6 +3,8 @@
 .idea
 .packages
 .pub/
+.dart_tool
+.flutter-plugins-dependencies
 build/
 ios/.generated/
 packages
