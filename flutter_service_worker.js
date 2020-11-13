@@ -3,30 +3,30 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 const RESOURCES = {
-  "main.dart.js": "0175aa1e6d826dd657bdcf85ad5ffc3e",
-"version.json": "b55267d96793c7f722872b2d6b8a4c38",
-"assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "b14fcf3ee94e3ace300b192e9e7c8c5d",
-"assets/fonts/MaterialIcons-Regular.otf": "1288c9e28052e028aba623321f7826ac",
-"assets/AssetManifest.json": "2efbb41d7877d10aac9d091f58ccd7b9",
-"assets/NOTICES": "e1a6a2b1719d4e90c5298cf660c01418",
-"assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
-"favicon.png": "5dcef449791fa27946b3d35ad8803796",
-"icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
-"icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
-"index.html": "b4f71ec9b08ab960df9e5754ee79d96d",
-"/": "b4f71ec9b08ab960df9e5754ee79d96d",
-"manifest.json": "72a571e6c72d5edbd579fdb28144df1c"
+  "/nemo/main.dart.js": "0175aa1e6d826dd657bdcf85ad5ffc3e",
+"/nemo/version.json": "b55267d96793c7f722872b2d6b8a4c38",
+"/nemo/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "b14fcf3ee94e3ace300b192e9e7c8c5d",
+"/nemo/assets/fonts/MaterialIcons-Regular.otf": "1288c9e28052e028aba623321f7826ac",
+"/nemo/assets/AssetManifest.json": "2efbb41d7877d10aac9d091f58ccd7b9",
+"/nemo/assets/NOTICES": "e1a6a2b1719d4e90c5298cf660c01418",
+"/nemo/assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
+"/nemo/favicon.png": "5dcef449791fa27946b3d35ad8803796",
+"/nemo/icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
+"/nemo/icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
+"/nemo/index.html": "b4f71ec9b08ab960df9e5754ee79d96d",
+"/nemo/": "b4f71ec9b08ab960df9e5754ee79d96d",
+"/nemo/manifest.json": "72a571e6c72d5edbd579fdb28144df1c"
 };
 
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = [
-  "/",
-"main.dart.js",
-"index.html",
-"assets/NOTICES",
-"assets/AssetManifest.json",
-"assets/FontManifest.json"];
+  "/nemo/",
+"/nemo/main.dart.js",
+"/nemo/index.html",
+"/nemo/assets/NOTICES",
+"/nemo/assets/AssetManifest.json",
+"/nemo/assets/FontManifest.json"];
 // During install, the TEMP cache is populated with the application shell files.
 self.addEventListener("install", (event) => {
   self.skipWaiting();
