@@ -34,11 +34,27 @@
        application. For more information, see:
        https://developers.google.com/web/fundamentals/primers/service-workers -->
   <script>
-    if ('serviceWorker' in navigator) {
+    /*if ('serviceWorker' in navigator) {
       window.addEventListener('flutter-first-frame', function () {
         navigator.serviceWorker.register('/nemo/flutter_service_worker.js?v=3674799962');
       });
+    }*/
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/nemo/flutter_service_worker.js', { scope: '/nemo/' }).then(function(reg) {
+
+    if(reg.installing) {
+      console.log('Service worker installing');
+    } else if(reg.waiting) {
+      console.log('Service worker installed');
+    } else if(reg.active) {
+      console.log('Service worker active');
     }
+
+  }).catch(function(error) {
+    // registration failed
+    console.log('Registration failed with ' + error);
+  });
+}
   </script>
   <script src="main.dart.js" type="application/javascript"></script>
 </body>
