@@ -89,7 +89,9 @@ class _DiveConfigState extends State<DiveConfig> {
       Navigator.of(context)
           .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
         return new GeneralSettings(appBar: _appBar, dive: dive);
-      }));
+      })).then((v) {
+        setState(() {});
+      });
     };
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
@@ -119,7 +121,9 @@ class _DiveConfigState extends State<DiveConfig> {
       Navigator.of(context)
           .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
         return new GasEdit(appBar: _appBar, gas: g, dive: dive, save: _saveGas);
-      }));
+      })).then((v) {
+        setState(() {});
+      });
     };
     if (dive.isCCR()) {
       if (g.useDiluent)
@@ -188,7 +192,9 @@ class _DiveConfigState extends State<DiveConfig> {
           .push(new MaterialPageRoute<Null>(builder: (BuildContext context) {
         return new DiveSegment(
             appBar: _appBar, dive: dive, index: idx, ceiling: ceiling);
-      }));
+      })).then((v) {
+        setState(() {});
+      });
     };
     Widget label = new Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
       new Expanded(
@@ -250,7 +256,9 @@ class _DiveConfigState extends State<DiveConfig> {
                 gas: new Gas.bottom(.21, .0, 1.2),
                 dive: dive,
                 save: _saveGas);
-          }));
+          })).then((v) {
+            setState(() {});
+          });
         },
       );
       if (idx > 1) gchildren.add(new Divider());
@@ -284,7 +292,9 @@ class _DiveConfigState extends State<DiveConfig> {
               new MaterialPageRoute<Null>(builder: (BuildContext context) {
             return new DiveSegment(
                 appBar: _appBar, dive: dive, index: -1, ceiling: ceiling);
-          }));
+          })).then((v) {
+            setState(() {});
+          });
         },
       );
       gchildren.add(new Padding(
